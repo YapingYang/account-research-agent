@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "Claim": {
+      "description": "A research claim with at least one supporting URL.",
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "source_urls": {
+          "items": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Urls",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text",
+        "source_urls"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Source": {
+      "description": "A source used in the account brief.",
+      "properties": {
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "web",
+            "sec_filing"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "title",
+        "retrieved_at",
+        "kind"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "description": "CRM-ready sourced account research record.",
+  "properties": {
+    "company_name": {
+      "title": "Company Name",
+      "type": "string"
+    },
+    "domain": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Domain"
+    },
+    "industry": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Industry"
+    },
+    "is_public": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Is Public"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "financial_highlights": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Financial Highlights",
+      "type": "array"
+    },
+    "signals": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Signals",
+      "type": "array"
+    },
+    "priorities": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Priorities",
+      "type": "array"
+    },
+    "pain_points": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Pain Points",
+      "type": "array"
+    },
+    "talking_points": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Talking Points",
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/Source"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    }
+  },
+  "required": [
+    "company_name",
+    "summary",
+    "generated_at",
+    "model"
+  ],
+  "title": "AccountRecord",
+  "type": "object"
+}

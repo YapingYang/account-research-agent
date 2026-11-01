@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "sec_edgar": {
+      "enabled": true,
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "sec_edgar_mcp.server"],
+      "env_from_settings": ["SEC_EDGAR_USER_AGENT"],
+      "agents": ["researcher"],
+      "allowed_tools": []
+    }
+  }
+}
