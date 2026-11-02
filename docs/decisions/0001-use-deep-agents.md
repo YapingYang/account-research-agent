@@ -1,10 +1,9 @@
 # ADR 0001: Use Deep Agents
 
 ## Status
-Superseded by [ADR 0005](0005-single-agent-code-citation-check.md)
+
+Accepted; implementation details are maintained in [ADR 0005](0005-single-agent-code-citation-check.md).
 
 ## Decision
-Use LangChain Deep Agents for the orchestrator and delegated research/verifier agents.
 
-## Rationale
-The project needs explicit subagents, per-agent skills, and a human approval gate before exporting. Deep Agents provides a framework aligned with that architecture while keeping application code config-driven.
+Use one Deep Agent for account research, with skills and tools attached to that agent. A checkpointed `export_account` interrupt provides the human approval gate before files are written. There are no delegated subagents.

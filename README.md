@@ -1,61 +1,46 @@
 # Account Research Agent
 
-An open-source Python scaffold for producing sourced account briefs and CRM-ready records with human approval before export.
+This single-agent CLI researches a company and creates a sourced account brief plus a validated `AccountRecord`. It gathers evidence through web tools and optional SEC EDGAR MCP, checks every claim against registered sources, and writes files only after human approval.
 
-## Why
-
-The single research agent uses bounded read-only web and SEC tools. A per-run source registry deduplicates URLs so claims can be traced to evidence before human-approved export.
-
-## How it works
-
-```text
-[Diagram placeholder: company input -> research -> verification -> human approval -> export]
+```mermaid
+flowchart LR
+  A[Company input] --> B[One Deep Agent]
+  B --> C[Web tools]
+  B --> D[SEC EDGAR via MCP]
+  C --> E[Per-run source registry]
+  D --> E
+  E --> F[Code citation check]
+  F --> G[Human approval]
+  G --> H[Export]
 ```
 
-## MCP
+## Citation enforcement
 
-MCP adds separately process-isolated access to SEC filings. The configured server is [`sec-edgar-mcp`](https://github.com/stefanoamorelli/sec-edgar-mcp), which is licensed AGPL-3.0. This project launches it as a process and does not import or copy its code. The allowlist is deny-by-default and enables company search, company information, company facts, and recent filings.
-
-## Skills
-
-Skills are Markdown methods under `skills/account-brief` and `skills/sec-filings`. They guide the single agent; skill bodies will be filled in during the prompt and output milestone.
-
-## Controls
-
-Research tools are read-only. Web searches and extracted content are bounded; fetched pages and MCP results are marked as untrusted input. The export tool is the only writer and requires human approval. MCP tools are filtered through an explicit allowlist.
+Every cited source ID must exist in the per-run registry. `submit_draft` validates the model's record against that registry, returns failed claims and valid IDs for one repair attempt, and drops any remaining invalid claims with a flag after the repair limit. The export tool uses only the validated pending record; it validates the `AccountRecord` again before writing.
 
 ## Quickstart
 
-Requires Python 3.11+ and `uv`.
+Requires Python 3.11+ and `uv`. Set `GROQ_API_KEY` and `TAVILY_API_KEY` in `.env`; add a real-name `SEC_EDGAR_USER_AGENT` to enable filings. Groq GPT-OSS 120B is the default. Gemini 3.6 Flash is a different-vendor option with a live tool-call check; use `--model gemini:gemini-3.6-flash` when Gemini credentials are available and Groq's free quota is exhausted. Full Gemini research quota remains unverified; see the [verification log](docs/verification.md).
 
 ```sh
 uv sync --all-extras
-cp .env.example .env
-ara doctor
+cp .env.example .env  # add API keys and SEC_EDGAR_USER_AGENT
+ara research "Apple" --ticker AAPL --context "selling AI workflow tools to finance teams"
 ```
 
-Set `GROQ_API_KEY` and `TAVILY_API_KEY` in `.env` to pass required-key diagnostics. Set a real-name and email `SEC_EDGAR_USER_AGENT` when enabling EDGAR.
+The CLI pauses for approval before export. Add `--yes` for scripted auto-approval. Use `ara --help` to list diagnostic commands.
 
-## Project structure
+## Examples and verification
 
-```text
-src/account_research/   Application package
-skills/                 Single-agent methods
-tests/                  Offline tests
-docs/                   Architecture and decisions
-```
+- [Live run history](docs/run-results.md)
+- [v0.1.0 verification matrix](docs/verification.md)
+- [Model spike and Groq rate limits](docs/spike/model-spike-results.md)
 
-## Roadmap
+## Known limits
 
-1. ✓ Project scaffold and configuration
-2. Model factory
-3. Read-only web research tools and SEC MCP integration
-4. Agent prompts and skills
-5. Main agent orchestration
-6. Human-gated export
-7. LangSmith tracing
-8. Research quality improvements
+- Live Gemini runs require `GOOGLE_API_KEY`; Gemini quota and model availability depend on the Google account and region.
+- Groq free-tier quotas can pause or stop a run. Same-call retries are bounded by `max_rate_limit_waits` and `max_total_wait_seconds`.
+- SEC EDGAR MCP is optional and requires a valid user agent. Without it, the run marks filings unavailable.
+- One agent is used; there are no subagents or LangSmith tracing integration.
 
-## License
-
-MIT. The optional separately launched SEC EDGAR MCP server is AGPL-3.0; see its upstream license and the process-isolation decision in ADR 0002.
+The optional separately launched SEC EDGAR MCP server is AGPL-3.0; see [ADR 0002](docs/decisions/0002-mcp-for-sec-filings.md). This project is MIT licensed.

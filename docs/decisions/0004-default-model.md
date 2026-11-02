@@ -11,7 +11,7 @@ The project needs an open-weight model on Groq that reliably calls tools and rea
 - `groq:qwen/qwen3-32b`
 - `groq:openai/gpt-oss-20b`
 - `groq:qwen/qwen3.8-27b`
-- `gemini:gemini-3.7-flash` (skipped; `GOOGLE_API_KEY` was unavailable)
+- `gemini:gemini-3.6-flash` (minimal tool-call verified; full run blocked by repeated 429s)
 
 ## Results summary
 
@@ -21,8 +21,8 @@ Live Groq responses for the configured key returned request and token limits of 
 
 ## Decision
 
-Use `groq:openai/gpt-oss-120b` as the default and leave `fallback_model` unset. Although Qwen 3.8 passed the spike checks, its observed free-tier output limit was only 1,000 output tokens per minute, below the 3,000 TPM needed for full account briefs. The live Apple run also showed that a fresh-run fallback after 429 wasted progress. Rate limits now trigger same-call waiting and retry. A fallback is eligible only for missing/decommissioned models or repeated server errors and only when output TPM headers confirm at least 3,000.
+Use `groq:openai/gpt-oss-120b` as the default and leave `fallback_model` unset. Although Qwen 3.8 passed the spike checks, its observed free-tier output limit was only 1,000 output tokens per minute, below the 3,000 TPM needed for full account briefs. The live Apple run also showed that a fresh-run fallback after 429 wasted progress. Rate limits now trigger same-call waiting and retry. A fallback is eligible only for missing/decommissioned models or repeated server errors and only when output TPM headers confirm at least 3,000. Gemini 3.6 Flash is the recommended manual selection after Groq quota is exhausted, but a complete live research run has not passed; recent full runs received repeated 429 responses without usable quota headers.
 
 ## Consequences
 
-The configured default is `groq:openai/gpt-oss-120b` and `fallback_model` defaults to `None`. Gemini support remains available through the optional `gemini` extra as a different-vendor fallback candidate; it was not evaluated without `GOOGLE_API_KEY`. Model capability evidence is collected through an isolated fixture tool and in-memory skill files. Re-run the spike when skipped model IDs return to the Groq catalog or when Gemini credentials are configured.
+The configured default is `groq:openai/gpt-oss-120b` and `fallback_model` defaults to `None`. Gemini support is available through the optional `gemini` extra. A live Gemini 3.6 Flash tool call succeeded, but its free-tier quota and full-run suitability remain unverified. Model capability evidence for Groq comes from an isolated fixture tool and in-memory skill files. Re-run the spike when skipped model IDs return to the Groq catalog or when provider quotas change.
