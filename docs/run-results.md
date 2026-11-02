@@ -19,3 +19,16 @@ The latest complete run stopped after 300 seconds of waits. The wait category wa
 The Gemini model preflight was a separate minimal live request: Gemini 3.6 Flash called the `ping` tool and reported 50 tokens. Gemini 3.7 Flash returned HTTP 503 for high demand. The successful preflight confirms tool binding, not full-run free-tier quota availability.
 
 Offline tests cover citation repair, rejection/revision/approval, no output before approval, `--yes`, and wait-cap behavior. See [verification](verification.md) for the acceptance matrix. `examples/apple/` and `examples/ramp/` remain empty because no live records were approved.
+
+## 2 November 2026 budgeted Groq checks
+
+Ollama was not installed, so the budgeted checks used Groq `openai/gpt-oss-120b`. Live attempts were run sequentially with the default 300-second total wait cap. A daily-quota error occurred on the final attempt; no lower-priority live check was started after it.
+
+| Attempt | Result | Calls | Input / output tokens | Largest provider input / estimate | Waits / duration | Runtime | Claims passed / dropped | Skills read | Flags |
+|---|---|---:|---:|---|---|---:|---|---|---|
+| Apple, before general tool-result trimming | Request estimate over cap; no draft | 17 | 43,504 / 4,337 | 5,163 / 6,341 | 8 / 288.1 s | 331.9 s | — / — | Not reported | No draft |
+| Apple, after general trimming | Agent ended normally without submitting | 8 | 24,399 / 1,491 | 4,808 / 6,063 | 4 / 119.0 s | 146.0 s | — / — | Not reported | No draft |
+| Apple, after early-stop fix | Request estimate over cap; no draft | 17 | 45,761 / 4,583 | 5,769 / 6,480 | 8 / 251.6 s | 277.4 s | — / — | Not reported | No draft |
+| Apple, after serialized-request estimator fix | Daily token quota exhausted | 16 | 38,302 / 2,905 | 5,015 / 6,407 | 7 / 274.4 s | 296.3 s | — / — | Not reported | No draft; no files |
+
+The latest response's raw headers and daily reset indication are recorded in [verification.md](verification.md). No run generated an AccountRecord, so the fields for passed/dropped claims, skills read, and account flags are unavailable rather than inferred.
