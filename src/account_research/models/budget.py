@@ -9,6 +9,7 @@ from typing import Any
 
 from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.tools import BaseTool
 
 from account_research.agent.submission import DraftSubmission
 from account_research.observability.tokens import TokenReport
@@ -31,8 +32,41 @@ class ModelCallBudgetExceeded(RuntimeError):
 
 def estimate_request_tokens(request: ModelRequest[Any]) -> int:
     """Estimate serialized model request size at four characters per token."""
-    serialized = repr(
-        (request.system_message, request.system_prompt, request.messages, request.tools)
+    message_data = []
+    for message in request.messages:
+        content = message.content
+        message_data.append(
+            {
+                "role": getattr(message, "type", "message"),
+                "name": getattr(message, "name", None),
+                "content": content,
+                "tool_calls": getattr(message, "tool_calls", None),
+                "tool_call_id": getattr(message, "tool_call_id", None),
+                "additional_kwargs": getattr(message, "additional_kwargs", {}),
+            }
+        )
+    tool_data = []
+    for item in request.tools:
+        if isinstance(item, BaseTool):
+            schema: Any = item.args_schema
+            if schema is not None and hasattr(schema, "model_json_schema"):
+                schema = schema.model_json_schema()
+            tool_data.append(
+                {"name": item.name, "description": item.description, "parameters": schema}
+            )
+        elif isinstance(item, dict):
+            tool_data.append(item)
+        else:
+            tool_data.append(str(item))
+    serialized = json.dumps(
+        {
+            "system": request.system_message.content if request.system_message else "",
+            "messages": message_data,
+            "tools": tool_data,
+            "tool_choice": request.tool_choice,
+        },
+        ensure_ascii=False,
+        default=str,
     )
     return (len(serialized) + 3) // 4
 
