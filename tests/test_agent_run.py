@@ -146,8 +146,49 @@ def test_never_submitting_draft_is_a_clear_failure(monkeypatch: pytest.MonkeyPat
 
     monkeypatch.setattr("account_research.agent.run.build_agent", lambda *_a, **_k: FakeAgent())
     settings = Settings(model="groq:test", fallback_model=None, mcp_enabled=False, _env_file=None)
-    with pytest.raises(ResearchRunError, match="without an approved export_account"):
+    with pytest.raises(ResearchRunError, match="without a submitted draft"):
         run_research(settings, "Acme")
+
+
+def test_runner_sends_final_submit_instruction_after_early_agent_stop(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls = 0
+
+    class FakeAgent:
+        def __init__(self, submission_tool: Any, export_tool: Any) -> None:
+            self.submission_tool = submission_tool
+            self.export_tool = export_tool
+
+        def invoke(self, payload: Any, **_kwargs: Any) -> Any:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return {"messages": []}
+            if isinstance(payload, Command):
+                self.export_tool.invoke({})
+                return {"messages": []}
+            assert "call submit_draft" in payload["messages"][0].content
+            self.submission_tool.invoke(_draft("S1"))
+            return {"__interrupt__": [object()], "messages": []}
+
+    def fake_build(
+        _settings: Settings,
+        registry: Any,
+        _tools: list[Any],
+        *,
+        extra_tools: list[Any],
+        **_kwargs: Any,
+    ) -> FakeAgent:
+        registry.record("https://example.com", "source", "search_result")
+        return FakeAgent(extra_tools[0], extra_tools[1])
+
+    monkeypatch.setattr("account_research.agent.run.build_agent", fake_build)
+    settings = Settings(model="groq:test", mcp_enabled=False, output_dir=tmp_path, _env_file=None)
+    result = run_research(settings, "Acme", approval_handler=lambda _record: (True, ""))
+    assert calls == 3
+    assert result.record.summary is not None
+    assert (tmp_path / "acme" / "brief.md").exists()
 
 
 def test_rate_limit_never_uses_fallback(monkeypatch: pytest.MonkeyPatch) -> None:

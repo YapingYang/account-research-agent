@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from account_research.agent.submission import DraftSubmission
 from account_research.observability.tokens import TokenReport
 
-_FINAL_DRAFT_INSTRUCTION = (
+FINAL_DRAFT_INSTRUCTION = (
     "The model-call budget is reached. Do no more research. Draft immediately using only the "
     "sources gathered so far and call submit_draft. Thin sections are acceptable; "
     "leave unsupported "
@@ -153,7 +153,7 @@ class ModelCallBudgetMiddleware(AgentMiddleware):
             )
         self.final_instruction_sent = True
         forced = request.override(
-            messages=[*request.messages, HumanMessage(content=_FINAL_DRAFT_INSTRUCTION)]
+            messages=[*request.messages, HumanMessage(content=FINAL_DRAFT_INSTRUCTION)]
         )
         response = handler(forced)
         result = response.result if isinstance(response.result, list) else [response.result]

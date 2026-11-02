@@ -15,6 +15,7 @@ from account_research.agent.submission import DraftSubmission, make_submit_draft
 from account_research.checks.citations import CitationReport
 from account_research.config import Settings
 from account_research.mcp.client import McpStatus, load_mcp_tools
+from account_research.models.budget import FINAL_DRAFT_INSTRUCTION
 from account_research.models.ratelimit import ModelUnavailableError, RateLimitState
 from account_research.observability.tokens import TokenReport, TokenUsageHandler
 from account_research.schemas.account import AccountRecord
@@ -167,6 +168,7 @@ def run_research(
             "files": seed_skill_files(settings),
         }
         state: dict[str, Any] = {}
+        final_instruction_sent = False
         try:
             while True:
                 state = agent.invoke(payload, config=invoke_config)
@@ -180,8 +182,17 @@ def run_research(
                     break
                 interrupts = state.get("__interrupt__", [])
                 if not interrupts:
+                    if not final_instruction_sent:
+                        final_instruction_sent = True
+                        instruction = (
+                            FINAL_DRAFT_INSTRUCTION
+                            if store.record is None
+                            else "The validated draft is ready. Call export_account now."
+                        )
+                        payload = {"messages": [HumanMessage(content=instruction)]}
+                        continue
                     raise ValueError(
-                        "Agent ended without an approved export_account call; "
+                        "Agent ended without a submitted draft and approved export_account call; "
                         "no files were written."
                     )
                 if store.record is None:
