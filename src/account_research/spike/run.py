@@ -23,7 +23,7 @@ DEFAULT_MODELS = [
     "groq:qwen/qwen3-32b",
     "groq:openai/gpt-oss-20b",
     "groq:qwen/qwen3.8-27b",
-    "gemini:gemini-3.7-flash",
+    "gemini:gemini-3.6-flash",
 ]
 GROQ_TOOL_CALLING = "Groq docs state hosted models support local/remote tool use."
 GROQ_NON_CHAT = {
@@ -125,9 +125,6 @@ def _run_trial(model_string: str, settings: Settings, skill_content: str) -> dic
                     ),
                 )
                 config: dict[str, Any] = {"recursion_limit": settings.recursion_limit}
-                if settings.langsmith_tracing:
-                    config["tags"] = ["spike", model_string]
-                    config["metadata"] = {"spike": True, "model": model_string}
                 input_state: dict[str, Any] = {
                     "messages": [{"role": "user", "content": "What is one fact about Acme Corp?"}],
                     "files": {"/skills/fact-format/SKILL.md": create_file_data(skill_content)},
@@ -147,9 +144,6 @@ def _run_trial(model_string: str, settings: Settings, skill_content: str) -> dic
                 ),
             )
             config = {"recursion_limit": settings.recursion_limit}
-            if settings.langsmith_tracing:
-                config["tags"] = ["spike", model_string]
-                config["metadata"] = {"spike": True, "model": model_string}
             input_state = {
                 "messages": [{"role": "user", "content": "What is one fact about Acme Corp?"}],
                 "files": {"/skills/fact-format/SKILL.md": create_file_data(skill_content)},

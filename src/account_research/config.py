@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     request_timeout_seconds: int = 60
     max_retries: int = 3
     max_rate_limit_waits: int = Field(default=6, ge=0)
+    max_total_wait_seconds: float = Field(default=300, ge=0)
     min_output_tpm: int = Field(default=3000, ge=1)
     max_output_tokens: int = Field(default=1500, ge=1)
     output_dir: Path = Path("output")
@@ -35,12 +36,7 @@ class Settings(BaseSettings):
     groq_api_key: SecretStr | None = Field(default=None, validation_alias="GROQ_API_KEY")
     google_api_key: SecretStr | None = Field(default=None, validation_alias="GOOGLE_API_KEY")
     tavily_api_key: SecretStr | None = Field(default=None, validation_alias="TAVILY_API_KEY")
-    langsmith_api_key: SecretStr | None = Field(default=None, validation_alias="LANGSMITH_API_KEY")
     sec_edgar_user_agent: str | None = Field(default=None, validation_alias="SEC_EDGAR_USER_AGENT")
-    langsmith_tracing: bool = Field(default=False, validation_alias="LANGSMITH_TRACING")
-    langsmith_project: str = Field(
-        default="account-research-agent", validation_alias="LANGSMITH_PROJECT"
-    )
 
     @model_validator(mode="after")
     def validate_positive_limits(self) -> "Settings":
@@ -52,6 +48,7 @@ class Settings(BaseSettings):
             or self.request_timeout_seconds < 1
             or self.max_retries < 0
             or self.max_rate_limit_waits < 0
+            or self.max_total_wait_seconds < 0
             or self.min_output_tpm < 1
             or self.max_output_tokens < 1
             or self.mcp_result_chars < 1
@@ -66,7 +63,6 @@ class Settings(BaseSettings):
             "groq_api_key",
             "google_api_key",
             "tavily_api_key",
-            "langsmith_api_key",
         ):
             values[key] = "********" if values[key] is not None else None
         return values

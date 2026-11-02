@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import re
 from typing import Annotated, Any, cast
 
 import typer
@@ -84,11 +83,16 @@ def research(
     domain: Annotated[str | None, typer.Option("--domain")] = None,
     ticker: Annotated[str | None, typer.Option("--ticker")] = None,
     context: Annotated[str | None, typer.Option("--context")] = None,
+    model: Annotated[str | None, typer.Option("--model")] = None,
+    yes: Annotated[bool, typer.Option("--yes")] = False,
 ) -> None:
-    """Research one company, validate citations, and write an AccountRecord."""
-    from account_research.agent.run import ResearchRunError, run_research, save_record
+    """Research one company and export its validated brief after approval."""
+    from account_research.agent.run import ResearchRunError, run_research
+    from account_research.tools.export_account import render_brief
 
     settings = get_settings()
+    if model:
+        settings = settings.model_copy(update={"model": model})
     try:
         result = run_research(
             settings,
@@ -96,6 +100,8 @@ def research(
             domain=domain,
             ticker=ticker,
             context=context,
+            approval_handler=None if yes else _approval_prompt,
+            auto_approve=yes,
         )
     except Exception as exc:  # noqa: BLE001 - report model/provider failures to CLI users
         console.print(f"Research failed: {exc}", style="red")
@@ -108,23 +114,15 @@ def research(
                 f"Rate-limit waits: {exc.rate_limit_waits} "
                 f"({exc.rate_limit_wait_seconds:.1f}s total)"
             )
+            console.print(
+                "Latest rate-limit headers: "
+                + json.dumps(exc.rate_limit_headers, indent=2, sort_keys=True)
+            )
         raise typer.Exit(code=1) from exc
-    slug = re.sub(r"[^a-z0-9]+", "-", company.casefold()).strip("-") or "company"
-    output = settings.output_dir / f"draft_{slug}.json"
-    save_record(result.record, str(output))
-    console.print(f"Saved {output}")
-    console.print(f"# {result.record.company_name}")
-    if result.record.summary:
-        console.print(result.record.summary.text)
-    for title, claims in (
-        ("Signals", result.record.signals),
-        ("Priorities", result.record.priorities),
-        ("Talking points", result.record.talking_points),
-    ):
-        if claims:
-            console.print(f"## {title}")
-            for claim in claims[:3]:
-                console.print(f"- {claim.text} ({', '.join(claim.source_ids)})")
+    console.print("Saved approved files:")
+    for output in result.output_paths:
+        console.print(output)
+    console.print(render_brief(result.record), markup=False)
     console.print("Token report:")
     console.print(json.dumps(result.token_report.as_dict(), indent=2))
     console.print(
@@ -135,6 +133,24 @@ def research(
         f"skills read={', '.join(result.skills_read) or '(none)'}"
     )
     console.print(f"Flags: {', '.join(result.record.flags) or '(none)'}")
+    console.print(
+        "Latest rate-limit headers: "
+        + json.dumps(result.rate_limit_headers, indent=2, sort_keys=True)
+    )
+
+
+def _approval_prompt(record: Any) -> tuple[bool, str]:
+    """Print the pending brief and collect one approval or rejection decision."""
+    from account_research.tools.export_account import render_brief
+
+    console.print(render_brief(record), markup=False)
+    while True:
+        choice = typer.prompt("[a]pprove / [r]eject", default="a").strip().casefold()
+        if choice in {"a", "approve"}:
+            return True, ""
+        if choice in {"r", "reject"}:
+            return False, typer.prompt("One-line feedback").strip()
+        console.print("Enter 'a' to approve or 'r' to reject.")
 
 
 def _token_estimate(value: object) -> int:
@@ -249,7 +265,7 @@ def spike(
     pause_seconds: Annotated[float, typer.Option("--pause-seconds", min=0)] = 5,
     models: Annotated[str, typer.Option("--models")] = (
         "groq:openai/gpt-oss-120b,groq:llama-3.3-70b-versatile,groq:qwen/qwen3-32b,"
-        "groq:openai/gpt-oss-20b,groq:qwen/qwen3.8-27b,gemini:gemini-3.7-flash"
+        "groq:openai/gpt-oss-20b,groq:qwen/qwen3.8-27b,gemini:gemini-3.6-flash"
     ),
 ) -> None:
     """Run the test-only model capability spike."""

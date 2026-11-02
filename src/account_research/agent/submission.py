@@ -1,12 +1,10 @@
 """Validated submit_draft tool and per-run draft storage."""
 
-from dataclasses import dataclass
-from typing import Annotated, Any
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
-from langchain_core.messages import ToolMessage
-from langchain_core.tools import InjectedToolCallId, StructuredTool
-from langgraph.types import Command
-from pydantic import create_model
+from langchain_core.tools import StructuredTool
 
 from account_research.checks.citations import CitationReport, check_citations, to_account_record
 from account_research.schemas.account import AccountRecord, BriefDraft
@@ -22,6 +20,18 @@ class DraftSubmission:
     resubmissions: int = 0
     failed_claims: int = 0
     dropped_claims: int = 0
+    revisions: int = 0
+    export_paths: list[Path] = field(default_factory=list)
+
+    def begin_revision(self) -> bool:
+        """Clear a rejected pending record once so the agent can revise it."""
+        if self.revisions >= 1:
+            return False
+        self.revisions += 1
+        self.record = None
+        self.report = None
+        self.resubmissions = 0
+        return True
 
 
 def make_submit_draft_tool(
@@ -33,15 +43,7 @@ def make_submit_draft_tool(
 ) -> StructuredTool:
     """Create the one-repair citation-checking submit_draft tool."""
 
-    tool_args = create_model(
-        "SubmitDraftArgs",
-        __base__=BriefDraft,
-        tool_call_id=(Annotated[str, InjectedToolCallId], ...),
-    )
-
-    def submit_draft(
-        tool_call_id: Annotated[str, InjectedToolCallId], **values: Any
-    ) -> str | Command[Any]:
+    def submit_draft(**values: Any) -> str:
         if store.record is not None:
             return "Draft already accepted."
         draft = BriefDraft.model_validate(values)
@@ -52,12 +54,7 @@ def make_submit_draft_tool(
             store.record = to_account_record(
                 draft, report, registry, model=model, flags=list(initial_flags or [])
             )
-            return Command(
-                goto="__end__",
-                update={
-                    "messages": [ToolMessage(content="Draft accepted.", tool_call_id=tool_call_id)]
-                },
-            )
+            return "Draft accepted. Call export_account next."
         if store.resubmissions == 0:
             store.resubmissions = 1
             failed = "\n".join(
@@ -76,17 +73,7 @@ def make_submit_draft_tool(
         )
         count = report.failed_count
         store.dropped_claims = count
-        return Command(
-            goto="__end__",
-            update={
-                "messages": [
-                    ToolMessage(
-                        content=f"Draft accepted with {count} claims removed.",
-                        tool_call_id=tool_call_id,
-                    )
-                ]
-            },
-        )
+        return f"Draft accepted with {count} claims removed. Call export_account next."
 
     return StructuredTool.from_function(
         submit_draft,
@@ -95,5 +82,5 @@ def make_submit_draft_tool(
             "Submit the completed account brief for citation validation. Arguments must follow "
             "the BriefDraft schema. Call this tool when ready; do not write the brief as a message."
         ),
-        args_schema=tool_args,
+        args_schema=BriefDraft,
     )

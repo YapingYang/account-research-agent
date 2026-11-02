@@ -1,11 +1,13 @@
 """Offline agent run test with scripted tool calls and citation repair."""
 
+from pathlib import Path
 from typing import Any
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langgraph.types import Command
 from pydantic import PrivateAttr
 
 from account_research.agent.run import ResearchRunError, run_research
@@ -65,6 +67,7 @@ class ScriptedToolChatModel(BaseChatModel):
 
 def test_fake_run_repairs_then_drops_bad_citation_and_reports_tokens(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     class FakeTavily:
         def __init__(self, **kwargs: Any) -> None:
@@ -97,6 +100,7 @@ def test_fake_run_repairs_then_drops_bad_citation_and_reports_tokens(
             _call("read_file", {"file_path": "/skills/account-brief/SKILL.md"}, "3"),
             _call("submit_draft", _draft("S1", "S999"), "4"),
             _call("submit_draft", _draft("S1"), "5"),
+            _call("export_account", {}, "6"),
         ]
     )
     monkeypatch.setattr(
@@ -107,9 +111,16 @@ def test_fake_run_repairs_then_drops_bad_citation_and_reports_tokens(
         fallback_model=None,
         tavily_api_key="test",
         mcp_enabled=False,
+        output_dir=tmp_path,
         _env_file=None,
     )
-    result = run_research(settings, "Acme")
+
+    def approve(record: Any) -> tuple[bool, str]:
+        assert record.company_name == "Acme"
+        assert not (tmp_path / "acme" / "brief.md").exists()
+        return True, ""
+
+    result = run_research(settings, "Acme", approval_handler=approve)
 
     assert result.record.summary is not None
     assert result.record.summary.source_ids == ["S1"]
@@ -119,21 +130,23 @@ def test_fake_run_repairs_then_drops_bad_citation_and_reports_tokens(
     assert result.claims_failed == 1
     assert result.claims_dropped == 0
     assert result.skills_read == ["account-brief"]
-    assert result.token_report.model_calls == 5
-    assert result.token_report.input_tokens == 1000
-    assert result.token_report.output_tokens == 100
+    assert result.token_report.model_calls == 6
+    assert result.token_report.input_tokens == 1200
+    assert result.token_report.output_tokens == 120
     assert result.token_report.largest_request_input_tokens == 200
-    assert result.token_report.as_dict()["total_tokens"] == 1100
+    assert result.token_report.as_dict()["total_tokens"] == 1320
+    assert (tmp_path / "acme" / "brief.md").exists()
+    assert (tmp_path / "acme" / "account.json").exists()
 
 
 def test_never_submitting_draft_is_a_clear_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeAgent:
-        def stream(self, *_args: Any, **_kwargs: Any) -> Any:
-            yield {"messages": []}
+        def invoke(self, *_args: Any, **_kwargs: Any) -> Any:
+            return {"messages": []}
 
     monkeypatch.setattr("account_research.agent.run.build_agent", lambda *_a, **_k: FakeAgent())
     settings = Settings(model="groq:test", fallback_model=None, mcp_enabled=False, _env_file=None)
-    with pytest.raises(ResearchRunError, match="without calling submit_draft"):
+    with pytest.raises(ResearchRunError, match="without an approved export_account"):
         run_research(settings, "Acme")
 
 
@@ -141,9 +154,8 @@ def test_rate_limit_never_uses_fallback(monkeypatch: pytest.MonkeyPatch) -> None
     built_models: list[str] = []
 
     class FakeAgent:
-        def stream(self, *_args: Any, **_kwargs: Any) -> Any:
+        def invoke(self, *_args: Any, **_kwargs: Any) -> Any:
             raise RuntimeError("429 rate limit")
-            yield {}
 
     def fake_build(
         _settings: Settings,
@@ -170,22 +182,27 @@ def test_rate_limit_never_uses_fallback(monkeypatch: pytest.MonkeyPatch) -> None
 
 @pytest.mark.parametrize("fallback_limit,should_run", [(4000, True), (1000, False)])
 def test_model_not_found_uses_only_eligible_fallback(
-    monkeypatch: pytest.MonkeyPatch, fallback_limit: int, should_run: bool
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Any,
+    fallback_limit: int,
+    should_run: bool,
 ) -> None:
     built: list[str] = []
 
     class FakeAgent:
-        def __init__(self, tool: Any, unavailable: bool = False) -> None:
-            self.tool = tool
+        def __init__(self, submit_tool: Any, export_tool: Any, unavailable: bool = False) -> None:
+            self.submit_tool = submit_tool
+            self.export_tool = export_tool
             self.unavailable = unavailable
 
-        def stream(self, *_args: Any, **_kwargs: Any) -> Any:
+        def invoke(self, payload: Any, **_kwargs: Any) -> Any:
             if self.unavailable:
                 raise ModelUnavailableError("model not found")
-            self.tool.invoke(
-                {"name": "submit_draft", "args": _draft("S1"), "id": "1", "type": "tool_call"}
-            )
-            yield {"messages": []}
+            if isinstance(payload, Command):
+                self.export_tool.invoke({})
+                return {"messages": []}
+            self.submit_tool.invoke(_draft("S1"))
+            return {"__interrupt__": [object()], "messages": []}
 
     def fake_build(
         _settings: Settings,
@@ -201,20 +218,21 @@ def test_model_not_found_uses_only_eligible_fallback(
             rate_limit_state.capture_headers(
                 {"x-ratelimit-limit-output-tokens": str(fallback_limit)}
             )
-            return FakeAgent(extra_tools[0], unavailable=True)
+            return FakeAgent(extra_tools[0], extra_tools[1], unavailable=True)
         registry.record("https://example.com", "source", "search_result")
-        return FakeAgent(extra_tools[0])
+        return FakeAgent(extra_tools[0], extra_tools[1])
 
     monkeypatch.setattr("account_research.agent.run.build_agent", fake_build)
     settings = Settings(
         model="groq:primary",
         fallback_model="groq:fallback",
         min_output_tpm=3000,
+        output_dir=tmp_path,
         mcp_enabled=False,
         _env_file=None,
     )
     if should_run:
-        result = run_research(settings, "Acme")
+        result = run_research(settings, "Acme", approval_handler=lambda _r: (True, ""))
         assert result.record.model == "groq:fallback"
     else:
         with pytest.raises(ResearchRunError, match="below min_output_tpm"):

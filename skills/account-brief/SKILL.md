@@ -18,4 +18,4 @@ Every claim cites at least one source ID returned by a tool. Use one fact per cl
 
 When evidence is thin, return fewer claims or empty sections. Never pad gaps with guesses. Mark unknowns as unavailable rather than inferring them.
 
-When the brief is ready, call `submit_draft` with the complete BriefDraft. Do not write the brief as a normal message. If citation validation rejects claims, fix or remove them and resubmit once.
+When the brief is ready, call `submit_draft` with the complete BriefDraft. Do not write the brief as a normal message. If citation validation rejects claims, fix or remove them and resubmit once. After it accepts the draft, call `export_account` next; it takes no arguments.

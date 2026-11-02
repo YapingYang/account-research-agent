@@ -77,7 +77,16 @@ def build_agent(
         system_prompt=load_prompt("main"),
         skills=["/skills/"],
         backend=backend,
-        middleware=[RateLimitMiddleware(rate_state, settings.max_rate_limit_waits), summarization],
+        interrupt_on={"export_account": True},
+        middleware=[
+            RateLimitMiddleware(
+                rate_state,
+                settings.max_rate_limit_waits,
+                settings.max_total_wait_seconds,
+                settings.max_output_tokens,
+            ),
+            summarization,
+        ],
         checkpointer=MemorySaver(),
         subagents=[],
         name="account-research-agent",

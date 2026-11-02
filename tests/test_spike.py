@@ -154,12 +154,12 @@ def test_spike_skips_gemini_without_key(tmp_path: Path, monkeypatch: pytest.Monk
         "account_research.spike.run._available_groq_models", lambda _settings: set()
     )
     results = run_spike(
-        Settings(_env_file=None),
-        ["gemini:gemini-3.7-flash"],
+        Settings(google_api_key=None, _env_file=None),
+        ["gemini:gemini-3.6-flash"],
         trials=1,
         pause_seconds=0,
         output_dir=tmp_path,
     )
     assert results["skipped_models"] == {
-        "gemini:gemini-3.7-flash": "GOOGLE_API_KEY is not configured"
+        "gemini:gemini-3.6-flash": "GOOGLE_API_KEY is not configured"
     }

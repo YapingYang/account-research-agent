@@ -9,7 +9,11 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import PrivateAttr
 
-from account_research.models.ratelimit import RateLimitMiddleware, RateLimitState
+from account_research.models.ratelimit import (
+    RateLimitMiddleware,
+    RateLimitState,
+    RateLimitWaitExceeded,
+)
 
 
 class FakeModel(BaseChatModel):
@@ -83,3 +87,33 @@ def test_gives_up_after_configured_rate_limit_waits() -> None:
     with pytest.raises(RuntimeError, match="wait budget exhausted"):
         middleware.wrap_model_call(request, handler)
     assert state.wait_count == 2
+
+
+def test_total_wait_cap_fails_fast_with_limit_and_reset() -> None:
+    state = RateLimitState()
+    state.capture_headers(
+        {
+            "x-ratelimit-remaining-tokens": "1",
+            "x-ratelimit-reset-tokens": "1800s",
+        }
+    )
+    slept: list[float] = []
+    middleware = RateLimitMiddleware(
+        state,
+        max_total_wait_seconds=1,
+        sleeper=slept.append,
+    )
+    with pytest.raises(RateLimitWaitExceeded, match="tokens/min.*reset time 1800s"):
+        middleware.wrap_model_call(
+            _request(), lambda _request: ModelResponse(result=[AIMessage(content="never")])
+        )
+    assert slept == []
+    assert state.latest_headers["x-ratelimit-reset-tokens"] == "1800s"
+
+
+def test_wait_status_names_request_and_daily_quotas() -> None:
+    state = RateLimitState()
+    state.capture_headers({"x-ratelimit-remaining-requests": "0"})
+    assert state.classify() == "requests/min"
+    state.capture_headers({"x-ratelimit-remaining-tokens-per-day": "0"})
+    assert state.classify() == "tokens/day"

@@ -1,13 +1,14 @@
-"""Run research and assemble a citation-checked AccountRecord."""
+"""Run research, collect approval, and export a citation-checked record."""
 
 import asyncio
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from langchain_core.messages import HumanMessage, ToolMessage
+from langgraph.types import Command
 
 from account_research.agent.builder import build_agent, seed_skill_files
 from account_research.agent.submission import DraftSubmission, make_submit_draft_tool
@@ -18,6 +19,9 @@ from account_research.models.ratelimit import ModelUnavailableError, RateLimitSt
 from account_research.observability.tokens import TokenReport, TokenUsageHandler
 from account_research.schemas.account import AccountRecord
 from account_research.sources.registry import SourceRegistry
+from account_research.tools.export_account import ExportDiagnostics, make_export_account_tool
+
+ApprovalHandler = Callable[[AccountRecord], tuple[bool, str]]
 
 
 @dataclass
@@ -31,13 +35,15 @@ class ResearchRun:
     mcp_status: McpStatus
     rate_limit_waits: int
     rate_limit_wait_seconds: float
+    rate_limit_headers: dict[str, str]
     citations: CitationReport
     claims_failed: int
     claims_dropped: int
+    output_paths: list[str]
 
 
 class ResearchRunError(RuntimeError):
-    """Failed research attempt with usage captured up to the failure."""
+    """Failed research attempt with usage and quota diagnostics."""
 
     def __init__(
         self,
@@ -47,12 +53,14 @@ class ResearchRunError(RuntimeError):
         *,
         rate_limit_waits: int = 0,
         rate_limit_wait_seconds: float = 0.0,
+        rate_limit_headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.token_report = token_report
         self.elapsed_seconds = elapsed_seconds
         self.rate_limit_waits = rate_limit_waits
         self.rate_limit_wait_seconds = rate_limit_wait_seconds
+        self.rate_limit_headers = dict(rate_limit_headers or {})
 
 
 def _skills_read(state: dict[str, Any]) -> list[str]:
@@ -81,6 +89,22 @@ def _copy_usage(total: TokenReport, current: TokenReport) -> None:
     total.rate_limit_errors += current.rate_limit_errors
 
 
+def _research_error(
+    message: str,
+    usage: TokenReport,
+    started: float,
+    rate_state: RateLimitState,
+) -> ResearchRunError:
+    return ResearchRunError(
+        message,
+        usage,
+        time.perf_counter() - started,
+        rate_limit_waits=rate_state.wait_count,
+        rate_limit_wait_seconds=rate_state.wait_seconds,
+        rate_limit_headers=rate_state.latest_headers,
+    )
+
+
 def run_research(
     settings: Settings,
     company: str,
@@ -88,8 +112,10 @@ def run_research(
     domain: str | None = None,
     ticker: str | None = None,
     context: str | None = None,
+    approval_handler: ApprovalHandler | None = None,
+    auto_approve: bool = False,
 ) -> ResearchRun:
-    """Run one tool-using agent and require a stored, citation-checked draft."""
+    """Research, pause before export, and resume after the human decision."""
     started = time.perf_counter()
     usage_total = TokenReport()
     rate_state = RateLimitState()
@@ -97,25 +123,29 @@ def run_research(
     if settings.fallback_model and settings.fallback_model != settings.model:
         models.append(settings.fallback_model)
 
-    for index, model_name in enumerate(models):
+    for model_index, model_name in enumerate(models):
         registry = SourceRegistry()
         mcp_tools, mcp_status = asyncio.run(load_mcp_tools(settings, registry))
-        flags = []
-        if not mcp_status.available and ticker:
-            flags.append("SEC filings unavailable")
+        flags = ["SEC filings unavailable"] if not mcp_status.available and ticker else []
         store = DraftSubmission()
+        usage = TokenUsageHandler()
+        diagnostics = ExportDiagnostics(
+            model=model_name,
+            token_report=usage.report,
+            started_at=started,
+        )
         submission_tool = make_submit_draft_tool(
             registry, store, model=model_name, initial_flags=flags
         )
+        export_tool = make_export_account_tool(store, settings.output_dir, diagnostics)
         agent = build_agent(
             settings,
             registry,
             mcp_tools,
             model_name=model_name,
             rate_limit_state=rate_state,
-            extra_tools=[submission_tool],
+            extra_tools=[submission_tool, export_tool],
         )
-        usage = TokenUsageHandler()
         invoke_config = {
             "recursion_limit": settings.recursion_limit,
             "callbacks": [usage],
@@ -127,77 +157,83 @@ def run_research(
             + (f" Ticker: {ticker}." if ticker else "")
             + (f" Seller context: {context}." if context else "")
         )
+        payload: Any = {
+            "messages": [HumanMessage(content=request)],
+            "files": seed_skill_files(settings),
+        }
+        state: dict[str, Any] = {}
         try:
-            stream = agent.stream(
-                {"messages": [HumanMessage(content=request)], "files": seed_skill_files(settings)},
-                config=invoke_config,
-                stream_mode="values",
-            )
-            state: dict[str, Any] = {}
-            try:
-                for update in stream:
-                    state = update
-                    if store.record is not None:
-                        break
-            finally:
-                close = getattr(stream, "close", None)
-                if close is not None:
-                    close()
+            while True:
+                state = agent.invoke(payload, config=invoke_config)
+                diagnostics.rate_limit_waits = rate_state.wait_count
+                diagnostics.rate_limit_wait_seconds = rate_state.wait_seconds
+                diagnostics.rate_limit_headers = rate_state.latest_headers
+                diagnostics.skills_read = _skills_read(state)
+                diagnostics.claims_failed = store.failed_claims
+                diagnostics.claims_dropped = store.dropped_claims
+                if store.export_paths:
+                    break
+                interrupts = state.get("__interrupt__", [])
+                if not interrupts:
+                    raise ValueError(
+                        "Agent ended without an approved export_account call; "
+                        "no files were written."
+                    )
+                if store.record is None:
+                    raise ValueError(
+                        "Agent paused before a validated draft was pending; no files were written."
+                    )
+                if approval_handler is None and not auto_approve:
+                    raise ValueError("Export approval is required; no files were written.")
+                if auto_approve:
+                    approve, feedback = True, ""
+                else:
+                    approve, feedback = approval_handler(store.record)  # type: ignore[misc]
+                if approve:
+                    payload = Command(resume={"decisions": [{"type": "approve"}]})
+                else:
+                    if not feedback.strip():
+                        feedback = "Please revise the brief using the reviewer feedback."
+                    if not store.begin_revision():
+                        raise ValueError("Export rejected twice; run ended without writing files.")
+                    payload = Command(
+                        resume={"decisions": [{"type": "reject", "message": feedback.strip()}]}
+                    )
             _copy_usage(usage_total, usage.report)
-            if store.record is None:
-                raise ValueError(
-                    "Agent finished without calling submit_draft; no AccountRecord was stored."
-                )
-            if store.report is None:
-                raise RuntimeError("submit_draft stored a record without a citation report")
+            if store.record is None or store.report is None:
+                raise RuntimeError("Export completed without a stored citation-checked record.")
+            diagnostics.token_report = usage_total
+            elapsed = time.perf_counter() - started
             return ResearchRun(
                 record=store.record,
                 token_report=usage_total,
-                elapsed_seconds=time.perf_counter() - started,
-                skills_read=_skills_read(state),
+                elapsed_seconds=elapsed,
+                skills_read=diagnostics.skills_read,
                 mcp_status=mcp_status,
                 rate_limit_waits=rate_state.wait_count,
                 rate_limit_wait_seconds=rate_state.wait_seconds,
+                rate_limit_headers=rate_state.latest_headers,
                 citations=store.report,
                 claims_failed=store.failed_claims,
                 claims_dropped=store.dropped_claims,
+                output_paths=[str(path) for path in store.export_paths],
             )
         except ModelUnavailableError as exc:
             _copy_usage(usage_total, usage.report)
-            if index != 0 or len(models) < 2:
-                raise ResearchRunError(
-                    str(exc),
-                    usage_total,
-                    time.perf_counter() - started,
-                    rate_limit_waits=rate_state.wait_count,
-                    rate_limit_wait_seconds=rate_state.wait_seconds,
-                ) from exc
-            output_tpm = rate_state.output_tpm
-            if output_tpm is None or output_tpm < settings.min_output_tpm:
+            if model_index == 0 and len(models) > 1:
+                output_tpm = rate_state.output_tpm
+                if output_tpm is not None and output_tpm >= settings.min_output_tpm:
+                    continue
                 observed = "unavailable" if output_tpm is None else str(output_tpm)
-                raise ResearchRunError(
+                raise _research_error(
                     f"Fallback {models[1]} skipped: output TPM from rate-limit headers is "
                     f"{observed}, below min_output_tpm={settings.min_output_tpm}.",
                     usage_total,
-                    time.perf_counter() - started,
-                    rate_limit_waits=rate_state.wait_count,
-                    rate_limit_wait_seconds=rate_state.wait_seconds,
+                    started,
+                    rate_state,
                 ) from exc
-            continue
+            raise _research_error(str(exc), usage_total, started, rate_state) from exc
         except Exception as exc:
             _copy_usage(usage_total, usage.report)
-            raise ResearchRunError(
-                str(exc),
-                usage_total,
-                time.perf_counter() - started,
-                rate_limit_waits=rate_state.wait_count,
-                rate_limit_wait_seconds=rate_state.wait_seconds,
-            ) from exc
-    raise ResearchRunError("Research did not run", usage_total, time.perf_counter() - started)
-
-
-def save_record(record: AccountRecord, path: str) -> None:
-    """Write the final code-assembled AccountRecord as JSON."""
-    output = Path(path)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            raise _research_error(str(exc), usage_total, started, rate_state) from exc
+    raise _research_error("Research did not run", usage_total, started, rate_state)
