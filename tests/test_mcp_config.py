@@ -9,7 +9,12 @@ from account_research.mcp.config import load_mcp_config
 
 def test_repo_config_validates() -> None:
     config = load_mcp_config(Path("mcp_servers.json"))
-    assert config.servers["sec_edgar"].allowed_tools == []
+    assert config.servers["sec_edgar"].allowed_tools == [
+        "search_companies",
+        "get_company_info",
+        "get_company_facts",
+        "get_recent_filings",
+    ]
 
 
 def test_empty_allowlist_exposes_nothing() -> None:

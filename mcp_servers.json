@@ -6,8 +6,7 @@
       "command": "python",
       "args": ["-m", "sec_edgar_mcp.server"],
       "env_from_settings": ["SEC_EDGAR_USER_AGENT"],
-      "agents": ["researcher"],
-      "allowed_tools": []
+      "allowed_tools": ["search_companies", "get_company_info", "get_company_facts", "get_recent_filings"]
     }
   }
 }

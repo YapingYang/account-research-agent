@@ -1,4 +1,4 @@
-"""Discover skill metadata from SKILL.md frontmatter."""
+"""Discover skill metadata and expose the two production skill folders."""
 
 from pathlib import Path
 from typing import TypedDict
@@ -9,7 +9,7 @@ import yaml
 class SkillMetadata(TypedDict):
     """Frontmatter metadata and location for a discovered skill."""
 
-    agent_folder: str
+    folder: str
     name: str
     description: str
     path: Path
@@ -41,7 +41,7 @@ def discover_skills(root: Path) -> list[SkillMetadata]:
             )
         skills.append(
             {
-                "agent_folder": path.parent.parent.name,
+                "folder": path.relative_to(root).parts[0],
                 "name": metadata["name"],
                 "description": metadata["description"],
                 "path": path,
@@ -50,9 +50,7 @@ def discover_skills(root: Path) -> list[SkillMetadata]:
     return skills
 
 
-def skills_for(agent_name: str, root: Path = Path("skills")) -> list[Path]:
-    """Return the skill directories explicitly assigned to an agent."""
-    folder = root / agent_name
-    if not folder.is_dir():
-        raise ValueError(f"Unknown agent skill folder: {agent_name}")
-    return sorted(path.parent for path in folder.glob("*/SKILL.md"))
+def agent_skill_paths(root: Path = Path("skills")) -> list[Path]:
+    """Return production skills in the fixed single-agent order, excluding spike skills."""
+    paths = [root / name for name in ("account-brief", "sec-filings")]
+    return [path for path in paths if (path / "SKILL.md").is_file()]

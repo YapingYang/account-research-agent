@@ -1,27 +1,25 @@
 {
   "$defs": {
     "Claim": {
-      "description": "A research claim with at least one supporting URL.",
+      "description": "One factual statement supported by one or more registered source IDs.",
       "properties": {
         "text": {
           "title": "Text",
           "type": "string"
         },
-        "source_urls": {
+        "source_ids": {
           "items": {
-            "format": "uri",
-            "maxLength": 2083,
-            "minLength": 1,
+            "pattern": "^S\\d+$",
             "type": "string"
           },
           "minItems": 1,
-          "title": "Source Urls",
+          "title": "Source Ids",
           "type": "array"
         }
       },
       "required": [
         "text",
-        "source_urls"
+        "source_ids"
       ],
       "title": "Claim",
       "type": "object"
@@ -29,6 +27,11 @@
     "Source": {
       "description": "A source used in the account brief.",
       "properties": {
+        "id": {
+          "pattern": "^S\\d+$",
+          "title": "Id",
+          "type": "string"
+        },
         "url": {
           "format": "uri",
           "maxLength": 2083,
@@ -47,7 +50,8 @@
         },
         "kind": {
           "enum": [
-            "web",
+            "search_result",
+            "web_page",
             "sec_filing"
           ],
           "title": "Kind",
@@ -55,6 +59,7 @@
         }
       },
       "required": [
+        "id",
         "url",
         "title",
         "retrieved_at",
@@ -64,7 +69,7 @@
       "type": "object"
     }
   },
-  "description": "CRM-ready sourced account research record.",
+  "description": "CRM-ready account record assembled and validated by application code.",
   "properties": {
     "company_name": {
       "title": "Company Name",
@@ -107,8 +112,15 @@
       "title": "Is Public"
     },
     "summary": {
-      "title": "Summary",
-      "type": "string"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Claim"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "financial_highlights": {
       "items": {
@@ -140,7 +152,7 @@
     },
     "talking_points": {
       "items": {
-        "type": "string"
+        "$ref": "#/$defs/Claim"
       },
       "title": "Talking Points",
       "type": "array"
@@ -150,6 +162,13 @@
         "$ref": "#/$defs/Source"
       },
       "title": "Sources",
+      "type": "array"
+    },
+    "flags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Flags",
       "type": "array"
     },
     "generated_at": {
@@ -164,7 +183,6 @@
   },
   "required": [
     "company_name",
-    "summary",
     "generated_at",
     "model"
   ],

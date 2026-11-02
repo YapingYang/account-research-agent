@@ -15,9 +15,17 @@ class Settings(BaseSettings):
 
     model: str = "groq:openai/gpt-oss-120b"
     fallback_model: str | None = None
-    search_budget: int = Field(default=8, ge=1, le=25)
-    max_page_chars: int = 6000
+    search_budget: int = Field(default=6, ge=1, le=25)
+    max_search_results: int = Field(default=5, ge=1, le=20)
+    snippet_chars: int = Field(default=300, ge=1)
+    max_page_chars: int = 3000
+    mcp_result_chars: int = 3000
     recursion_limit: int = 50
+    request_timeout_seconds: int = 60
+    max_retries: int = 3
+    max_rate_limit_waits: int = Field(default=6, ge=0)
+    min_output_tpm: int = Field(default=3000, ge=1)
+    max_output_tokens: int = Field(default=1500, ge=1)
     output_dir: Path = Path("output")
     skills_dir: Path = Path("skills")
     mcp_config_path: Path = Path("mcp_servers.json")
@@ -25,6 +33,7 @@ class Settings(BaseSettings):
     mcp_timeout_seconds: int = 30
     log_level: str = "INFO"
     groq_api_key: SecretStr | None = Field(default=None, validation_alias="GROQ_API_KEY")
+    google_api_key: SecretStr | None = Field(default=None, validation_alias="GOOGLE_API_KEY")
     tavily_api_key: SecretStr | None = Field(default=None, validation_alias="TAVILY_API_KEY")
     langsmith_api_key: SecretStr | None = Field(default=None, validation_alias="LANGSMITH_API_KEY")
     sec_edgar_user_agent: str | None = Field(default=None, validation_alias="SEC_EDGAR_USER_AGENT")
@@ -36,16 +45,29 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_positive_limits(self) -> "Settings":
         """Reject non-positive runtime limits."""
-        if self.max_page_chars < 1 or self.recursion_limit < 1 or self.mcp_timeout_seconds < 1:
-            raise ValueError(
-                "max_page_chars, recursion_limit, and mcp_timeout_seconds must be positive"
-            )
+        if (
+            self.max_page_chars < 1
+            or self.recursion_limit < 1
+            or self.mcp_timeout_seconds < 1
+            or self.request_timeout_seconds < 1
+            or self.max_retries < 0
+            or self.max_rate_limit_waits < 0
+            or self.min_output_tpm < 1
+            or self.max_output_tokens < 1
+            or self.mcp_result_chars < 1
+        ):
+            raise ValueError("limits must be positive (max_retries must be non-negative)")
         return self
 
     def redacted(self) -> dict[str, Any]:
         """Return settings safe for diagnostic output."""
         values = self.model_dump()
-        for key in ("groq_api_key", "tavily_api_key", "langsmith_api_key"):
+        for key in (
+            "groq_api_key",
+            "google_api_key",
+            "tavily_api_key",
+            "langsmith_api_key",
+        ):
             values[key] = "********" if values[key] is not None else None
         return values
 

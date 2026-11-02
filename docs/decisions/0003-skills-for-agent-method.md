@@ -1,10 +1,10 @@
 # ADR 0003: Use skills for agent methods
 
 ## Status
-Accepted
+Superseded by [ADR 0005](0005-single-agent-code-citation-check.md)
 
 ## Decision
-Store focused operating guidance in per-agent `SKILL.md` files rather than growing system prompts.
+Store focused operating guidance in `SKILL.md` files rather than growing system prompts.
 
 ## Rationale
-Separate skill folders let each agent load only the methods relevant to its role; custom subagents do not inherit the main agent's skills.
+The current single agent loads only `account-brief` and `sec-filings`; the earlier per-agent structure was removed to reduce token and orchestration overhead.

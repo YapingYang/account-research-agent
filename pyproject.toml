@@ -16,8 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 edgar = ["sec-edgar-mcp"]
-ui = ["gradio"]
 local = ["langchain-ollama"]
+gemini = ["langchain-google-genai"]
 
 [dependency-groups]
 dev = ["pytest", "pytest-mock", "ruff", "mypy", "pre-commit", "types-PyYAML"]

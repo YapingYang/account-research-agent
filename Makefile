@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test check schema demo
+.PHONY: install lint format typecheck test check schema spike
 
 install:
 	uv sync --all-extras
@@ -23,5 +23,5 @@ check: lint
 schema:
 	uv run python -c 'import json; from account_research.schemas.account import AccountRecord; open("docs/account_record.schema.json", "w").write(json.dumps(AccountRecord.model_json_schema(), indent=2) + chr(10))'
 
-demo:
-	uv run python app/gradio_app.py
+spike:
+	uv run ara spike

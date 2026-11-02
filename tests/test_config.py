@@ -8,8 +8,14 @@ from account_research.config import Settings
 
 def test_defaults() -> None:
     settings = Settings(_env_file=None)
-    assert settings.search_budget == 8
+    assert settings.search_budget == 6
+    assert settings.max_search_results == 5
+    assert settings.snippet_chars == 300
+    assert settings.max_page_chars == 3000
     assert settings.model == "groq:openai/gpt-oss-120b"
+    assert settings.fallback_model is None
+    assert settings.request_timeout_seconds == 60
+    assert settings.max_retries == 3
 
 
 def test_environment_override(monkeypatch: pytest.MonkeyPatch) -> None:

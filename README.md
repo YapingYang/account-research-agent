@@ -4,7 +4,7 @@ An open-source Python scaffold for producing sourced account briefs and CRM-read
 
 ## Why
 
-The project separates research, source verification, and approved export so account insights can be reviewed and traced to evidence.
+The single research agent uses bounded read-only web and SEC tools. A per-run source registry deduplicates URLs so claims can be traced to evidence before human-approved export.
 
 ## How it works
 
@@ -14,15 +14,15 @@ The project separates research, source verification, and approved export so acco
 
 ## MCP
 
-MCP adds separately process-isolated access to SEC filings. The configured server is [`sec-edgar-mcp`](https://github.com/stefanoamorelli/sec-edgar-mcp), which is licensed AGPL-3.0. This project launches it as a process and does not import or copy its code. The allowlist is deny-by-default; an empty list exposes no tools and must be populated only after inspecting actual tool names.
+MCP adds separately process-isolated access to SEC filings. The configured server is [`sec-edgar-mcp`](https://github.com/stefanoamorelli/sec-edgar-mcp), which is licensed AGPL-3.0. This project launches it as a process and does not import or copy its code. The allowlist is deny-by-default and enables company search, company information, company facts, and recent filings.
 
 ## Skills
 
-Skills are Markdown methods scoped to each agent: `main/account-brief` guides brief writing; `researcher/web-research` guides web research; `researcher/sec-filings` guides EDGAR work; and `verifier/source-verification` guides claim checking. They live under `skills/`; custom subagents receive only their own folder.
+Skills are Markdown methods under `skills/account-brief` and `skills/sec-filings`. They guide the single agent; skill bodies will be filled in during the prompt and output milestone.
 
 ## Controls
 
-Research tools will be read-only. The export tool will be the only writer and will require human approval. MCP tools are filtered through an explicit allowlist.
+Research tools are read-only. Web searches and extracted content are bounded; fetched pages and MCP results are marked as untrusted input. The export tool is the only writer and requires human approval. MCP tools are filtered through an explicit allowlist.
 
 ## Quickstart
 
@@ -40,24 +40,21 @@ Set `GROQ_API_KEY` and `TAVILY_API_KEY` in `.env` to pass required-key diagnosti
 
 ```text
 src/account_research/   Application package
-skills/                 Agent-specific methods
+skills/                 Single-agent methods
 tests/                  Offline tests
 docs/                   Architecture and decisions
-app/                    Optional Gradio demo
 ```
 
 ## Roadmap
 
 1. ✓ Project scaffold and configuration
 2. Model factory
-3. Read-only web research tools
-4. Researcher subagent and SEC MCP integration
-5. Verifier subagent and skills
-6. Main agent orchestration
-7. Human-gated export
-8. LangSmith tracing
-9. Research quality improvements
-10. Gradio demo
+3. Read-only web research tools and SEC MCP integration
+4. Agent prompts and skills
+5. Main agent orchestration
+6. Human-gated export
+7. LangSmith tracing
+8. Research quality improvements
 
 ## License
 

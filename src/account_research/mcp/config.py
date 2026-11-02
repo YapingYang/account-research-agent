@@ -16,7 +16,6 @@ class MCPServerConfig(BaseModel):
     command: str
     args: list[str] = Field(default_factory=list)
     env_from_settings: list[str] = Field(default_factory=list)
-    agents: list[str] = Field(default_factory=list)
     allowed_tools: list[str] = Field(default_factory=list)
 
 

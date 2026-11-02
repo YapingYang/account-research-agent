@@ -6,7 +6,9 @@ from account_research.prompts import load_prompt
 
 
 def test_load_prompt() -> None:
-    assert "TODO" in load_prompt("main")
+    prompt = load_prompt("main")
+    assert "<untrusted_content>" in prompt
+    assert len(prompt) <= 1400
 
 
 def test_unknown_prompt() -> None:

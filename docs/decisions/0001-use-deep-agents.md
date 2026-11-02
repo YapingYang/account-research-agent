@@ -1,7 +1,7 @@
 # ADR 0001: Use Deep Agents
 
 ## Status
-Accepted
+Superseded by [ADR 0005](0005-single-agent-code-citation-check.md)
 
 ## Decision
 Use LangChain Deep Agents for the orchestrator and delegated research/verifier agents.
