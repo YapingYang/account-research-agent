@@ -10,6 +10,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import PrivateAttr
 
 from account_research.models.ratelimit import (
+    DailyQuotaExceeded,
     RateLimitMiddleware,
     RateLimitState,
     RateLimitWaitExceeded,
@@ -117,3 +118,16 @@ def test_wait_status_names_request_and_daily_quotas() -> None:
     assert state.classify() == "requests/min"
     state.capture_headers({"x-ratelimit-remaining-tokens-per-day": "0"})
     assert state.classify() == "tokens/day"
+
+
+def test_daily_quota_error_stops_without_retry_or_wait() -> None:
+    state = RateLimitState()
+    slept: list[float] = []
+    middleware = RateLimitMiddleware(state, sleeper=slept.append)
+
+    def handler(_request: ModelRequest[Any]) -> ModelResponse[Any]:
+        raise RuntimeError("429 daily token quota exceeded")
+
+    with pytest.raises(DailyQuotaExceeded, match="Daily token quota exhausted"):
+        middleware.wrap_model_call(_request(), handler)
+    assert slept == []

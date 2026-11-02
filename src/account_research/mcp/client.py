@@ -14,6 +14,7 @@ from account_research.mcp.allowlist import filter_tools
 from account_research.mcp.config import load_mcp_config
 from account_research.sources.registry import SourceRegistry
 from account_research.tools._text import truncate, wrap_untrusted
+from account_research.tools.budget import BUDGET_REACHED, ToolCallBudget
 
 logger = logging.getLogger(__name__)
 _ACCESSION_RE = re.compile(r"\b\d{10}-\d{2}-\d{6}\b|\b\d{18}\b")
@@ -91,10 +92,17 @@ async def discover_raw_tools(settings: Settings) -> tuple[list[BaseTool], McpSta
         return [], McpStatus(False, str(exc))
 
 
-def _wrap_tool(tool: BaseTool, settings: Settings, registry: SourceRegistry) -> BaseTool:
+def _wrap_tool(
+    tool: BaseTool,
+    settings: Settings,
+    registry: SourceRegistry,
+    budget: ToolCallBudget,
+) -> BaseTool:
     """Bound MCP output and tag it as untrusted, recording filing URLs."""
 
     async def invoke(args: dict[str, Any]) -> str:
+        if not budget.consume():
+            return BUDGET_REACHED
         value = await asyncio.wait_for(tool.ainvoke(args), timeout=settings.mcp_timeout_seconds)
         text = str(value)
         source = _record_sec_sources(text, args, tool.name, registry)[0]
@@ -134,8 +142,10 @@ async def load_mcp_tools(
             if server.enabled
             for name in server.allowed_tools
         }
+        sec_budget = ToolCallBudget(settings.max_sec_calls)
         return [
-            _wrap_tool(tool, settings, registry) for tool in filter_tools(tools, allowed)
+            _wrap_tool(tool, settings, registry, sec_budget)
+            for tool in filter_tools(tools, allowed)
         ], status
     except Exception as exc:  # noqa: BLE001
         logger.warning("MCP allowlist loading failed: %s", exc)

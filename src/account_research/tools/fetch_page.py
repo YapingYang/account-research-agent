@@ -10,6 +10,7 @@ from tavily import TavilyClient  # type: ignore[import-untyped]
 from account_research.config import Settings
 from account_research.sources.registry import SourceRegistry
 from account_research.tools._text import truncate, wrap_untrusted
+from account_research.tools.budget import BUDGET_REACHED, ToolCallBudget
 
 
 def _validate_public_url(url: str) -> None:
@@ -35,16 +36,14 @@ def make_fetch_page(settings: Settings, registry: SourceRegistry) -> BaseTool:
     if settings.tavily_api_key is None:
         raise ValueError("TAVILY_API_KEY is required to create page extraction")
     client = TavilyClient(api_key=settings.tavily_api_key.get_secret_value())
-    calls = 0
+    budget = ToolCallBudget(settings.max_page_fetches)
 
     @tool("fetch_page")
     def fetch(url: str) -> str:
-        """Extract bounded text from at most three public HTTP(S) pages per run."""
-        nonlocal calls
+        """Extract bounded text from at most two public HTTP(S) pages per run."""
+        if not budget.consume():
+            return BUDGET_REACHED
         _validate_public_url(url)
-        if calls >= 3:
-            return "Page fetch limit reached. Draft with the sources you have."
-        calls += 1
         result = client.extract(
             urls=[url],
             format="text",

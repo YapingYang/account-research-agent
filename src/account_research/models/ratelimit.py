@@ -18,6 +18,10 @@ class RateLimitWaitExceeded(RuntimeError):
     """A requested rate-limit sleep would exceed the run-wide wait budget."""
 
 
+class DailyQuotaExceeded(RuntimeError):
+    """The provider reports an exhausted daily token allowance."""
+
+
 def _seconds(value: str | None) -> float | None:
     if not value:
         return None
@@ -72,7 +76,7 @@ class RateLimitState:
         text = str(error or "").casefold()
         if "output tokens per minute" in text or "otpm" in text:
             return "output tokens per minute"
-        if "tokens per day" in text or "tpd" in text:
+        if "tokens per day" in text or "per day" in text or "daily" in text or "tpd" in text:
             return "tokens/day"
         if "requests per minute" in text or "rpm" in text:
             return "requests/min"
@@ -215,7 +219,11 @@ class RateLimitMiddleware(AgentMiddleware):
                 None,
             )
             if remaining_daily == 0:
-                limit, reset = "tokens/day", self.state.reset_for("tokens/day")
+                raise DailyQuotaExceeded(
+                    f"Daily token quota exhausted; reset time "
+                    f"{self.state.reset_for('tokens/day')}; "
+                    f"headers={self.state.latest_headers}"
+                )
             elif remaining_requests == 0:
                 limit, reset = "requests/min", self.state.reset_for("requests/min")
             elif remaining is not None and estimate > remaining:
@@ -263,6 +271,11 @@ class RateLimitMiddleware(AgentMiddleware):
                     delay = _seconds(str(retry_after)) if retry_after is not None else None
                     delay = delay or self.state.reset_seconds or 60.0
                     limit = self.state.classify(exc)
+                    if limit == "tokens/day":
+                        raise DailyQuotaExceeded(
+                            f"Daily token quota exhausted; reset time "
+                            f"{self.state.reset_for(limit)}; headers={self.state.latest_headers}"
+                        ) from exc
                     self.state.wait(
                         delay,
                         limit,

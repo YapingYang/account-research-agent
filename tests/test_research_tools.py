@@ -58,7 +58,7 @@ def test_search_caps_calls_compacts_results_and_registers(monkeypatch: pytest.Mo
     result = tool.invoke({"query": "Acme"})
     assert json.loads(result)[0]["id"] == "S1"
     assert len(json.loads(result)[0]["snippet"]) <= 20
-    assert "Search budget reached" in tool.invoke({"query": "Acme"})
+    assert "Budget reached. Draft and call submit_draft now." in tool.invoke({"query": "Acme"})
     assert len(registry.all()) == 1
 
 
@@ -89,11 +89,13 @@ def test_fetch_rejects_local_urls_and_wraps_truncated_content(
     tool = make_fetch_page(settings, registry)
     result = tool.invoke({"url": "https://example.com"})
     assert '<untrusted_content source_id="S1"' in result
+    assert 'title="Page"' in result
     assert "[truncated]" in result
     tool.invoke({"url": "https://example.com/2"})
-    tool.invoke({"url": "https://example.com/3"})
-    assert "Page fetch limit reached" in tool.invoke({"url": "https://example.com/4"})
-    assert len(registry.all()) == 3
+    assert "Budget reached. Draft and call submit_draft now." in tool.invoke(
+        {"url": "https://example.com/3"}
+    )
+    assert len(registry.all()) == 2
 
 
 def test_mcp_disabled_fails_closed() -> None:
@@ -165,7 +167,9 @@ def test_mcp_allowlist_wrapper_bounds_marks_and_records(
         return [raw_tool], McpStatus(True)
 
     monkeypatch.setattr(mcp_client, "discover_raw_tools", fake_discover)
-    settings = Settings(mcp_config_path=config, mcp_result_chars=80, _env_file=None)
+    settings = Settings(
+        mcp_config_path=config, mcp_result_chars=80, max_sec_calls=1, _env_file=None
+    )
     registry = SourceRegistry()
     tools, status = asyncio.run(mcp_client.load_mcp_tools(settings, registry))
     assert status.available and [item.name for item in tools] == ["lookup"]
@@ -173,6 +177,9 @@ def test_mcp_allowlist_wrapper_bounds_marks_and_records(
     assert '<untrusted_content source_id="S1"' in result
     assert "[truncated]" in result
     assert "https://www.sec.gov/Archives/edgar/data/1/filing.txt" in str(registry.all()[0].url)
+    assert "Budget reached. Draft and call submit_draft now." in tools[0].invoke(
+        {"identifier": "AAPL"}
+    )
 
 
 def test_sec_output_builds_filing_urls_from_cik_and_accessions() -> None:

@@ -15,7 +15,11 @@ class Settings(BaseSettings):
 
     model: str = "groq:openai/gpt-oss-120b"
     fallback_model: str | None = None
-    search_budget: int = Field(default=6, ge=1, le=25)
+    max_model_calls: int = Field(default=15, ge=1)
+    max_request_tokens: int = Field(default=6500, ge=1)
+    search_budget: int = Field(default=4, ge=1, le=25)
+    max_page_fetches: int = Field(default=2, ge=1)
+    max_sec_calls: int = Field(default=4, ge=1)
     max_search_results: int = Field(default=5, ge=1, le=20)
     snippet_chars: int = Field(default=300, ge=1)
     max_page_chars: int = 3000
@@ -43,6 +47,10 @@ class Settings(BaseSettings):
         """Reject non-positive runtime limits."""
         if (
             self.max_page_chars < 1
+            or self.max_model_calls < 1
+            or self.max_request_tokens < 1
+            or self.max_page_fetches < 1
+            or self.max_sec_calls < 1
             or self.recursion_limit < 1
             or self.mcp_timeout_seconds < 1
             or self.request_timeout_seconds < 1

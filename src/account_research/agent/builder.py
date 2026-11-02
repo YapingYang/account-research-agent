@@ -14,9 +14,12 @@ from deepagents.middleware import SummarizationMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
 from langgraph.checkpoint.memory import MemorySaver
 
+from account_research.agent.submission import DraftSubmission
 from account_research.config import Settings
+from account_research.models.budget import ModelCallBudgetMiddleware, RequestSizeMiddleware
 from account_research.models.factory import get_chat_model
 from account_research.models.ratelimit import RateLimitMiddleware, RateLimitState
+from account_research.observability.tokens import TokenReport
 from account_research.prompts import load_prompt
 from account_research.skills.loader import agent_skill_paths
 from account_research.sources.registry import SourceRegistry
@@ -50,6 +53,8 @@ def build_agent(
     model: BaseChatModel | None = None,
     rate_limit_state: RateLimitState | None = None,
     extra_tools: list[Any] | None = None,
+    submission: DraftSubmission | None = None,
+    usage_report: TokenReport | None = None,
 ) -> Any:
     """Build a single tool-using agent with Pydantic structured output."""
     selected_model = model_name or settings.model
@@ -79,6 +84,14 @@ def build_agent(
         backend=backend,
         interrupt_on={"export_account": True},
         middleware=[
+            *(
+                [
+                    ModelCallBudgetMiddleware(settings.max_model_calls, usage_report, submission),
+                    RequestSizeMiddleware(settings.max_request_tokens, usage_report),
+                ]
+                if submission is not None and usage_report is not None
+                else []
+            ),
             RateLimitMiddleware(
                 rate_state,
                 settings.max_rate_limit_waits,

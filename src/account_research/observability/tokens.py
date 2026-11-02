@@ -16,6 +16,7 @@ class TokenReport:
     input_tokens: int = 0
     output_tokens: int = 0
     largest_request_input_tokens: int = 0
+    largest_request_estimate_tokens: int = 0
     rate_limit_errors: int = 0
 
     @property

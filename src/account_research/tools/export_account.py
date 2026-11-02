@@ -84,6 +84,10 @@ def _run_report(record: AccountRecord, diagnostics: ExportDiagnostics) -> str:
         ("Input tokens", str(diagnostics.token_report.input_tokens)),
         ("Output tokens", str(diagnostics.token_report.output_tokens)),
         ("Largest request input", str(diagnostics.token_report.largest_request_input_tokens)),
+        (
+            "Largest request estimate",
+            str(diagnostics.token_report.largest_request_estimate_tokens),
+        ),
         ("Rate-limit waits", str(diagnostics.rate_limit_waits)),
         ("Total wait seconds", f"{diagnostics.rate_limit_wait_seconds:.1f}"),
         ("Runtime seconds", f"{elapsed:.1f}"),

@@ -212,6 +212,7 @@ def test_model_not_found_uses_only_eligible_fallback(
         model_name: str,
         rate_limit_state: Any,
         extra_tools: list[Any],
+        **_kwargs: Any,
     ) -> FakeAgent:
         built.append(model_name)
         if model_name == "groq:primary":

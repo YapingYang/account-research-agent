@@ -8,6 +8,7 @@ from tavily import TavilyClient  # type: ignore[import-untyped]
 from account_research.config import Settings
 from account_research.sources.registry import SourceRegistry
 from account_research.tools._text import truncate
+from account_research.tools.budget import BUDGET_REACHED, ToolCallBudget
 
 
 def make_web_search(settings: Settings, registry: SourceRegistry) -> BaseTool:
@@ -15,7 +16,7 @@ def make_web_search(settings: Settings, registry: SourceRegistry) -> BaseTool:
     if settings.tavily_api_key is None:
         raise ValueError("TAVILY_API_KEY is required to create web search")
     client = TavilyClient(api_key=settings.tavily_api_key.get_secret_value())
-    calls = 0
+    budget = ToolCallBudget(settings.search_budget)
 
     @tool("web_search")
     def search(query: str) -> str:
@@ -23,10 +24,8 @@ def make_web_search(settings: Settings, registry: SourceRegistry) -> BaseTool:
 
         Results are kept to the configured count and snippet size.
         """
-        nonlocal calls
-        if calls >= settings.search_budget:
-            return "Search budget reached. Draft with the sources you have."
-        calls += 1
+        if not budget.consume():
+            return BUDGET_REACHED
         response = client.search(
             query,
             max_results=settings.max_search_results,

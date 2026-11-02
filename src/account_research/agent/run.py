@@ -86,6 +86,9 @@ def _copy_usage(total: TokenReport, current: TokenReport) -> None:
     total.largest_request_input_tokens = max(
         total.largest_request_input_tokens, current.largest_request_input_tokens
     )
+    total.largest_request_estimate_tokens = max(
+        total.largest_request_estimate_tokens, current.largest_request_estimate_tokens
+    )
     total.rate_limit_errors += current.rate_limit_errors
 
 
@@ -145,6 +148,8 @@ def run_research(
             model_name=model_name,
             rate_limit_state=rate_state,
             extra_tools=[submission_tool, export_tool],
+            submission=store,
+            usage_report=usage.report,
         )
         invoke_config = {
             "recursion_limit": settings.recursion_limit,

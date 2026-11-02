@@ -18,6 +18,7 @@ class DraftSubmission:
     record: AccountRecord | None = None
     report: CitationReport | None = None
     resubmissions: int = 0
+    submit_calls: int = 0
     failed_claims: int = 0
     dropped_claims: int = 0
     revisions: int = 0
@@ -44,6 +45,7 @@ def make_submit_draft_tool(
     """Create the one-repair citation-checking submit_draft tool."""
 
     def submit_draft(**values: Any) -> str:
+        store.submit_calls += 1
         if store.record is not None:
             return "Draft already accepted."
         draft = BriefDraft.model_validate(values)

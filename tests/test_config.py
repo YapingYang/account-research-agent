@@ -8,7 +8,11 @@ from account_research.config import Settings
 
 def test_defaults() -> None:
     settings = Settings(_env_file=None)
-    assert settings.search_budget == 6
+    assert settings.max_model_calls == 15
+    assert settings.max_request_tokens == 6500
+    assert settings.search_budget == 4
+    assert settings.max_page_fetches == 2
+    assert settings.max_sec_calls == 4
     assert settings.max_search_results == 5
     assert settings.snippet_chars == 300
     assert settings.max_page_chars == 3000
