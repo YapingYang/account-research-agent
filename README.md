@@ -68,24 +68,31 @@ Example brief layout:
 # Company Name
 
 ## Summary
+
 - ... [sources: S1, S2]
 
 ## Financial highlights
+
 - ... [sources: S3]
 
 ## Signals
+
 - ... [sources: S4]
 
 ## Priorities
+
 - ... [sources: S5]
 
 ## Pain points
+
 - ... [sources: S6]
 
 ## Talking points
+
 - ... [sources: S7]
 
 ## Sources
+
 - **S1** — Example title (search_result): https://example.com
 ```
 
@@ -93,19 +100,19 @@ The exported `account.json` is a validated `AccountRecord` with these fields: co
 
 ## Tech stack
 
-| Area | Technology |
-|---|---|
-| Agent and interrupts | Deep Agents, LangGraph |
-| Models | Groq, optional Gemini, optional Ollama |
-| Web research | Tavily |
-| SEC filings | `langchain-mcp-adapters`, `sec-edgar-mcp` |
-| Record validation | Pydantic |
-| CLI | Typer |
-| Output rendering | Rich |
-| Packaging | uv |
-| Linting and type-checking | Ruff, mypy |
-| Testing | pytest |
-| CI | GitHub Actions (project configuration present) |
+| Area                      | Technology                                     |
+| ------------------------- | ---------------------------------------------- |
+| Agent and interrupts      | Deep Agents, LangGraph                         |
+| Models                    | Groq, optional Gemini, optional Ollama         |
+| Web research              | Tavily                                         |
+| SEC filings               | `langchain-mcp-adapters`, `sec-edgar-mcp`      |
+| Record validation         | Pydantic                                       |
+| CLI                       | Typer                                          |
+| Output rendering          | Rich                                           |
+| Packaging                 | uv                                             |
+| Linting and type-checking | Ruff, mypy                                     |
+| Testing                   | pytest                                         |
+| CI                        | GitHub Actions (project configuration present) |
 
 ## Quickstart
 
@@ -125,9 +132,15 @@ Commands:
 ```sh
 uv sync --all-extras
 cp .env.example .env
-# Fill in GROQ_API_KEY, TAVILY_API_KEY, and SEC_EDGAR_USER_AGENT
+# Fill in ANTHROPIC_API_KEY, TAVILY_API_KEY, and SEC_EDGAR_USER_AGENT
 uv run ara doctor
 uv run ara research "Apple" --ticker AAPL --context "selling AI workflow tools to finance teams"
+```
+
+## Run the UI
+
+```sh
+streamlit run app.py
 ```
 
 The default Groq flow is the verified hosted path in this repo. The CLI pauses for approval unless `--yes` is used. Use `--model ollama:gpt-oss:20b` when Ollama is installed and the model is present.
@@ -139,9 +152,9 @@ The CLI commands are verified against the implementation:
 - `uv run ara --help`
 - `uv run ara doctor --help`
 - `uv run ara skills --help`
-- `uv run ara research --help`  (options: `--domain`, `--ticker`, `--context`, `--model`, `--yes`)
+- `uv run ara research --help` (options: `--domain`, `--ticker`, `--context`, `--model`, `--yes`)
 - `uv run ara mcp-tools --help`
-- `uv run ara tools-check --help`  (option: `--ticker`)
+- `uv run ara tools-check --help` (option: `--ticker`)
 
 The research command usage is:
 
@@ -153,36 +166,38 @@ uv run ara research {company} --domain <str> --ticker <str> --context <str> --mo
 
 The runtime settings are defined in [src/account_research/config.py](src/account_research/config.py) and loaded from `.env` with the `ARA_` prefix for app settings.
 
-| Setting | Env var | Default | Purpose |
-|---|---|---:|---|
-| `model` | `ARA_MODEL` | `groq:openai/gpt-oss-120b` | Default model selection |
-| `fallback_model` | `ARA_FALLBACK_MODEL` | `null` | Optional fallback model |
-| `max_model_calls` | `ARA_MAX_MODEL_CALLS` | `15` | Max model turns per run |
-| `max_request_tokens` | `ARA_MAX_REQUEST_TOKENS` | `6500` | Cap for serialized model request size |
-| `search_budget` | `ARA_SEARCH_BUDGET` | `4` | Search actions per run |
-| `max_page_fetches` | `ARA_MAX_PAGE_FETCHES` | `2` | Page fetch cap |
-| `max_sec_calls` | `ARA_MAX_SEC_CALLS` | `4` | SEC tool call cap |
-| `max_search_results` | `ARA_MAX_SEARCH_RESULTS` | `5` | Max Web search results |
-| `snippet_chars` | `ARA_SNIPPET_CHARS` | `300` | Source snippet length |
-| `max_page_chars` | `ARA_MAX_PAGE_CHARS` | `3000` | Max page content kept |
-| `mcp_result_chars` | `ARA_MCP_RESULT_CHARS` | `3000` | Max MCP result kept |
-| `recursion_limit` | `ARA_RECURSION_LIMIT` | `50` | Agent recursion limit |
-| `request_timeout_seconds` | `ARA_REQUEST_TIMEOUT_SECONDS` | `60` | Request timeout |
-| `max_retries` | `ARA_MAX_RETRIES` | `3` | Retry count |
-| `max_rate_limit_waits` | `ARA_MAX_RATE_LIMIT_WAITS` | `6` | Rate-limit wait budget |
-| `max_total_wait_seconds` | `ARA_MAX_TOTAL_WAIT_SECONDS` | `300` | Bounded wait time for all runs |
-| `min_output_tpm` | `ARA_MIN_OUTPUT_TPM` | `3000` | Minimum observed output throughput for fallback gating |
-| `max_output_tokens` | `ARA_MAX_OUTPUT_TOKENS` | `1500` | Max output tokens for a provider response |
-| `output_dir` | `ARA_OUTPUT_DIR` | `output` | Export directory |
-| `skills_dir` | `ARA_SKILLS_DIR` | `skills` | Skills directory |
-| `mcp_config_path` | `ARA_MCP_CONFIG_PATH` | `mcp_servers.json` | MCP server config |
-| `mcp_enabled` | `ARA_MCP_ENABLED` | `true` | Enables SEC filings tool path |
-| `mcp_timeout_seconds` | `ARA_MCP_TIMEOUT_SECONDS` | `30` | MCP call timeout |
-| `log_level` | `ARA_LOG_LEVEL` | `INFO` | Logging level |
-| `groq_api_key` | `GROQ_API_KEY` | unset | Groq access key |
-| `google_api_key` | `GOOGLE_API_KEY` | unset | Optional Gemini provider key |
-| `tavily_api_key` | `TAVILY_API_KEY` | unset | Tavily access key |
-| `sec_edgar_user_agent` | `SEC_EDGAR_USER_AGENT` | unset | Required SEC EDGAR User-Agent |
+| Setting                   | Env var                       |                    Default | Purpose                                                |
+| ------------------------- | ----------------------------- | -------------------------: | ------------------------------------------------------ |
+| `model`                   | `ARA_MODEL`                   | `anthropic:claude-opus-5-5` | Default model selection                               |
+| `anthropic_effort`        | `ARA_ANTHROPIC_EFFORT`        |                   `medium` | Claude thinking depth and cost (low to max)            |
+| `fallback_model`          | `ARA_FALLBACK_MODEL`          |                     `null` | Optional fallback model                                |
+| `max_model_calls`         | `ARA_MAX_MODEL_CALLS`         |                       `15` | Max model turns per run                                |
+| `max_request_tokens`      | `ARA_MAX_REQUEST_TOKENS`      | unset: `6500` Groq, `32000` other | Cap for serialized model request size  |
+| `search_budget`           | `ARA_SEARCH_BUDGET`           |                        `4` | Search actions per run                                 |
+| `max_page_fetches`        | `ARA_MAX_PAGE_FETCHES`        |                        `2` | Page fetch cap                                         |
+| `max_sec_calls`           | `ARA_MAX_SEC_CALLS`           |                        `4` | SEC tool call cap                                      |
+| `max_search_results`      | `ARA_MAX_SEARCH_RESULTS`      |                        `5` | Max Web search results                                 |
+| `snippet_chars`           | `ARA_SNIPPET_CHARS`           |                      `300` | Source snippet length                                  |
+| `max_page_chars`          | `ARA_MAX_PAGE_CHARS`          |                     `3000` | Max page content kept                                  |
+| `mcp_result_chars`        | `ARA_MCP_RESULT_CHARS`        |                     `3000` | Max MCP result kept                                    |
+| `recursion_limit`         | `ARA_RECURSION_LIMIT`         |                       `50` | Agent recursion limit                                  |
+| `request_timeout_seconds` | `ARA_REQUEST_TIMEOUT_SECONDS` |                       `60` | Request timeout                                        |
+| `max_retries`             | `ARA_MAX_RETRIES`             |                        `3` | Retry count                                            |
+| `max_rate_limit_waits`    | `ARA_MAX_RATE_LIMIT_WAITS`    |                        `6` | Rate-limit wait budget                                 |
+| `max_total_wait_seconds`  | `ARA_MAX_TOTAL_WAIT_SECONDS`  |                      `300` | Bounded wait time for all runs                         |
+| `min_output_tpm`          | `ARA_MIN_OUTPUT_TPM`          |                     `3000` | Minimum observed output throughput for fallback gating |
+| `max_output_tokens`       | `ARA_MAX_OUTPUT_TOKENS`       |                     `1500` | Max output tokens for a provider response              |
+| `output_dir`              | `ARA_OUTPUT_DIR`              |                   `output` | Export directory                                       |
+| `skills_dir`              | `ARA_SKILLS_DIR`              |                   `skills` | Skills directory                                       |
+| `mcp_config_path`         | `ARA_MCP_CONFIG_PATH`         |         `mcp_servers.json` | MCP server config                                      |
+| `mcp_enabled`             | `ARA_MCP_ENABLED`             |                     `true` | Enables SEC filings tool path                          |
+| `mcp_timeout_seconds`     | `ARA_MCP_TIMEOUT_SECONDS`     |                       `30` | MCP call timeout                                       |
+| `log_level`               | `ARA_LOG_LEVEL`               |                     `INFO` | Logging level                                          |
+| `anthropic_api_key`       | `ANTHROPIC_API_KEY`           |                      unset | Anthropic access key (default provider)                |
+| `groq_api_key`            | `GROQ_API_KEY`                |                      unset | Groq access key                                        |
+| `google_api_key`          | `GOOGLE_API_KEY`              |                      unset | Optional Gemini provider key                           |
+| `tavily_api_key`          | `TAVILY_API_KEY`              |                      unset | Tavily access key                                      |
+| `sec_edgar_user_agent`    | `SEC_EDGAR_USER_AGENT`        |                      unset | Required SEC EDGAR User-Agent                          |
 
 ## Testing and verification
 

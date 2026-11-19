@@ -9,15 +9,20 @@ from account_research.config import Settings
 def test_defaults() -> None:
     settings = Settings(_env_file=None)
     assert settings.max_model_calls == 15
-    assert settings.max_request_tokens == 6500
-    assert settings.search_budget == 4
-    assert settings.max_page_fetches == 2
+    assert settings.max_request_tokens is None
+    assert settings.request_token_cap("openai:gpt-4o-mini") == 32000
+    assert settings.request_token_cap("groq:openai/gpt-oss-120b") == 6500
+    assert settings.search_budget == 8
+    assert settings.max_page_fetches == 4
     assert settings.max_sec_calls == 4
     assert settings.max_search_results == 5
     assert settings.snippet_chars == 300
     assert settings.max_page_chars == 3000
-    assert settings.model == "groq:openai/gpt-oss-120b"
+    assert settings.model == "anthropic:claude-opus-5-5"
     assert settings.fallback_model is None
+    assert settings.anthropic_effort == "medium"
+    assert settings.request_token_cap("anthropic:claude-opus-5-5") == 32000
+    assert settings.mcp_enabled is True
     assert settings.request_timeout_seconds == 60
     assert settings.max_retries == 3
 
@@ -36,3 +41,10 @@ def test_redacted_hides_secrets() -> None:
     settings = Settings(groq_api_key="private", _env_file=None)
     assert settings.redacted()["groq_api_key"] == "********"
     assert "private" not in str(settings.redacted())
+
+
+def test_explicit_request_token_cap_overrides_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ARA_MAX_REQUEST_TOKENS", "9000")
+    settings = Settings(_env_file=None)
+    assert settings.request_token_cap("openai:gpt-4o-mini") == 9000
+    assert settings.request_token_cap("groq:openai/gpt-oss-120b") == 9000

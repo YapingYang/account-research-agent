@@ -55,6 +55,7 @@ def build_agent(
     extra_tools: list[Any] | None = None,
     submission: DraftSubmission | None = None,
     usage_report: TokenReport | None = None,
+    trace_events: Any | None = None,
 ) -> Any:
     """Build a single tool-using agent with Pydantic structured output."""
     selected_model = model_name or settings.model
@@ -65,7 +66,9 @@ def build_agent(
     summarization = SummarizationMiddleware(
         model=chat_model,
         backend=backend,
-        trigger=("tokens", 4800),
+        # Summarize at ~75% of the request cap: 4800 for Groq's small cap, later for larger models,
+        # so source text the model quotes from stays verbatim for longer.
+        trigger=("tokens", max(4800, int(settings.request_token_cap(selected_model) * 0.75))),
         keep=("messages", 8),
         summary_prompt=(
             "Summarize this company research run compactly. Preserve the exact company name, "
@@ -87,7 +90,9 @@ def build_agent(
             *(
                 [
                     ModelCallBudgetMiddleware(settings.max_model_calls, usage_report, submission),
-                    RequestSizeMiddleware(settings.max_request_tokens, usage_report),
+                    RequestSizeMiddleware(
+                        settings.request_token_cap(selected_model), usage_report
+                    ),
                 ]
                 if submission is not None and usage_report is not None
                 else []
@@ -97,6 +102,10 @@ def build_agent(
                 settings.max_rate_limit_waits,
                 settings.max_total_wait_seconds,
                 settings.max_output_tokens,
+                default_wait_seconds=settings.rate_limit_default_wait_seconds,
+                backoff_base_seconds=settings.rate_limit_backoff_base_seconds,
+                backoff_cap_seconds=settings.rate_limit_backoff_cap_seconds,
+                on_wait=trace_events,
             ),
             summarization,
         ],

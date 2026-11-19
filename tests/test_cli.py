@@ -53,7 +53,13 @@ def test_research_reports_exported_record(tmp_path: Path, monkeypatch: pytest.Mo
     monkeypatch.setattr("account_research.agent.run.run_research", lambda *a, **kw: fake)
     monkeypatch.setattr(
         "account_research.interfaces.cli.get_settings",
-        lambda: Settings(output_dir=tmp_path, _env_file=None),
+        lambda: Settings(
+            output_dir=tmp_path,
+            model="openai:gpt-4o-mini",
+            openai_api_key="test-key",
+            tavily_api_key="test-tavily",
+            _env_file=None,
+        ),
     )
     result = runner.invoke(app, ["research", "Acme"])
     assert result.exit_code == 0
@@ -94,7 +100,13 @@ def test_research_model_override_and_yes(monkeypatch: pytest.MonkeyPatch) -> Non
 
     monkeypatch.setattr("account_research.agent.run.run_research", fake_run)
     monkeypatch.setattr(
-        "account_research.interfaces.cli.get_settings", lambda: Settings(_env_file=None)
+        "account_research.interfaces.cli.get_settings",
+        lambda: Settings(
+            model="openai:gpt-4o-mini",
+            openai_api_key="test-key",
+            tavily_api_key="test-tavily",
+            _env_file=None,
+        ),
     )
     result = runner.invoke(app, ["research", "Acme", "--model", "gemini:gemini-3.7-flash", "--yes"])
     assert result.exit_code == 0

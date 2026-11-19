@@ -35,14 +35,14 @@ This is the exact reset window and quota state observed in the repo during the r
 
 ## Verification table
 
-| Check | Status | Evidence |
-|---|---|---|
-| `uv sync --all-extras` | Passed | Completed successfully with Python 3.11.15 |
-| `make check` | Passed | Ruff, mypy, and pytest all passed; 71 tests passed |
-| `uv run ara doctor` | Passed | All three required keys loaded |
-| Required Apple live run | Failed on provider limits | Run stopped at max model calls before a verified approved export |
-| Ramp / reject-then-approve / MCP-disabled Apple | Not run | The required Apple run was blocked before the remaining live checks were allowed |
-| Offline budget and request trimming tests | Passed | `tests/test_model_budgets.py` and `tests/test_ratelimit.py` passed |
+| Check                                           | Status                    | Evidence                                                                         |
+| ----------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------- |
+| `uv sync --all-extras`                          | Passed                    | Completed successfully with Python 3.11.15                                       |
+| `make check`                                    | Passed                    | Ruff, mypy, and pytest all passed; 71 tests passed                               |
+| `uv run ara doctor`                             | Passed                    | All three required keys loaded                                                   |
+| Required Apple live run                         | Failed on provider limits | Run stopped at max model calls before a verified approved export                 |
+| Ramp / reject-then-approve / MCP-disabled Apple | Not run                   | The required Apple run was blocked before the remaining live checks were allowed |
+| Offline budget and request trimming tests       | Passed                    | `tests/test_model_budgets.py` and `tests/test_ratelimit.py` passed               |
 
 ## Verified live vs offline only
 

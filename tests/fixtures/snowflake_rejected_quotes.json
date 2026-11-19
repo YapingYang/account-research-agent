@@ -1,0 +1,306 @@
+[
+ {
+  "run": "debug2.json",
+  "text": "Snowflake Inc. reported a net loss of $487.3 million for Q2 FY2027, with total assets of $8.69 billion and liabilities of $6.54 billion.",
+  "quote": "Net loss of $487.3 million for Q2 FY2027.",
+  "source_ids": [
+   "S5",
+   "S2",
+   "S3"
+  ],
+  "sources": [
+   {
+    "id": "S5",
+    "kind": "sec",
+    "title": "NetIncomeLoss — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=NetIncomeLoss&period=2026-07-31",
+    "content": "NetIncomeLoss: -487291000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   },
+   {
+    "id": "S2",
+    "kind": "sec",
+    "title": "Assets — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=Assets&period=2026-07-31",
+    "content": "Assets: 8690459000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   },
+   {
+    "id": "S3",
+    "kind": "sec",
+    "title": "Liabilities — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=Liabilities&period=2026-07-31",
+    "content": "Liabilities: 6540795000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   }
+  ]
+ },
+ {
+  "run": "debug2.json",
+  "text": "Snowflake's leadership emphasized cost discipline in recent communications.",
+  "quote": "Leadership emphasized cost discipline.",
+  "source_ids": [
+   "S8"
+  ],
+  "sources": [
+   {
+    "id": "S8",
+    "kind": "sec",
+    "title": "8-K — 2026-10-02T00:00:00",
+    "url": "https://www.sec.gov/Archives/edgar/data/1640147/000164014726000043",
+    "content": "8-K filing filed=2026-10-02T00:00:00; period of report=2026-09-28T00:00:00; accession=0001640147-26-000043."
+   }
+  ]
+ },
+ {
+  "run": "debug2.json",
+  "text": "The company is focusing on improving operational efficiency and finance automation.",
+  "quote": "Focusing on improving operational efficiency.",
+  "source_ids": [
+   "S8"
+  ],
+  "sources": [
+   {
+    "id": "S8",
+    "kind": "sec",
+    "title": "8-K — 2026-10-02T00:00:00",
+    "url": "https://www.sec.gov/Archives/edgar/data/1640147/000164014726000043",
+    "content": "8-K filing filed=2026-10-02T00:00:00; period of report=2026-09-28T00:00:00; accession=0001640147-26-000043."
+   }
+  ]
+ },
+ {
+  "run": "debug2.json",
+  "text": "Possible need: Addressing the significant net loss reported in Q2 FY2027.",
+  "quote": "Net loss of $487.3 million for Q2 FY2027.",
+  "source_ids": [
+   "S5"
+  ],
+  "sources": [
+   {
+    "id": "S5",
+    "kind": "sec",
+    "title": "NetIncomeLoss — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=NetIncomeLoss&period=2026-07-31",
+    "content": "NetIncomeLoss: -487291000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   }
+  ]
+ },
+ {
+  "run": "debug2.json",
+  "text": "Highlight Snowflake's strong asset base of $8.69 billion despite recent losses.",
+  "quote": "Total assets as of July 31, 2026, were $8.69 billion.",
+  "source_ids": [
+   "S2"
+  ],
+  "sources": [
+   {
+    "id": "S2",
+    "kind": "sec",
+    "title": "Assets — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=Assets&period=2026-07-31",
+    "content": "Assets: 8690459000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   }
+  ]
+ },
+ {
+  "run": "debug2.json",
+  "text": "Discuss the importance of finance automation in achieving operational efficiency.",
+  "quote": "Focusing on improving operational efficiency.",
+  "source_ids": [
+   "S8"
+  ],
+  "sources": [
+   {
+    "id": "S8",
+    "kind": "sec",
+    "title": "8-K — 2026-10-02T00:00:00",
+    "url": "https://www.sec.gov/Archives/edgar/data/1640147/000164014726000043",
+    "content": "8-K filing filed=2026-10-02T00:00:00; period of report=2026-09-28T00:00:00; accession=0001640147-26-000043."
+   }
+  ]
+ },
+ {
+  "run": "debug3.json",
+  "text": "Snowflake Inc. reported a net loss of $487.3 million for Q2 FY2027, with total assets of $8.69 billion and liabilities of $6.54 billion.",
+  "quote": "Net loss of $487.3 million for Q2 FY2027.",
+  "source_ids": [
+   "S5",
+   "S2",
+   "S3"
+  ],
+  "sources": [
+   {
+    "id": "S5",
+    "kind": "sec",
+    "title": "NetIncomeLoss — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=NetIncomeLoss&period=2026-07-31",
+    "content": "NetIncomeLoss: -487291000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   },
+   {
+    "id": "S2",
+    "kind": "sec",
+    "title": "Assets — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=Assets&period=2026-07-31",
+    "content": "Assets: 8690459000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   },
+   {
+    "id": "S3",
+    "kind": "sec",
+    "title": "Liabilities — 10-Q",
+    "url": "https://www.sec.gov/edgar/browse?CIK=1640147&form=10-Q&metric=Liabilities&period=2026-07-31",
+    "content": "Liabilities: 6540795000.0 USD; period=2026-07-31; form=10-Q; fiscal_year=2027; fiscal_period=Q2 (Q2 fiscal 2027, Q2 FY2027)."
+   }
+  ]
+ },
+ {
+  "run": "debug3.json",
+  "text": "Snowflake's leadership emphasized cost discipline in recent communications.",
+  "quote": "Leadership emphasized cost discipline.",
+  "source_ids": [
+   "S8"
+  ],
+  "sources": [
+   {
+    "id": "S8",
+    "kind": "sec",
+    "title": "8-K — 2026-10-02T00:00:00",
+    "url": "https://www.sec.gov/Archives/edgar/data/1640147/000164014726000043",
+    "content": "8-K filing filed=2026-10-02T00:00:00; period of report=2026-09-28T00:00:00; accession=0001640147-26-000043."
+   }
+  ]
+ },
+ {
+  "run": "debug3.json",
+  "text": "The company is focusing on finance automation to enhance operational efficiency.",
+  "quote": "Focusing on finance automation.",
+  "source_ids": [
+   "S8"
+  ],
+  "sources": [
+   {
+    "id": "S8",
+    "kind": "sec",
+    "title": "8-K — 2026-10-02T00:00:00",
+    "url": "https://www.sec.gov/Archives/edgar/data/1640147/000164014726000043",
+    "content": "8-K filing filed=2026-10-02T00:00:00; period of report=2026-09-28T00:00:00; accession=0001640147-26-000043."
+   }
+  ]
+ },
+ {
+  "run": "debug3.json",
+  "text": "Discuss the importance of finance automation in achieving operational efficiency.",
+  "quote": "Focusing on finance automation.",
+  "source_ids": [
+   "S8"
+  ],
+  "sources": [
+   {
+    "id": "S8",
+    "kind": "sec",
+    "title": "8-K — 2026-10-02T00:00:00",
+    "url": "https://www.sec.gov/Archives/edgar/data/1640147/000164014726000043",
+    "content": "8-K filing filed=2026-10-02T00:00:00; period of report=2026-09-28T00:00:00; accession=0001640147-26-000043."
+   }
+  ]
+ },
+ {
+  "run": "debug4.json",
+  "text": "Snowflake Inc. is a cloud-based data warehousing company.",
+  "quote": "Snowflake Inc. (Ticker: SNOW) operates in the prepackaged software sector.",
+  "source_ids": [
+   "S1"
+  ],
+  "sources": [
+   {
+    "id": "S1",
+    "kind": "sec",
+    "title": "SEC company profile — Snowflake Inc.",
+    "url": "https://www.sec.gov/cgi-bin/browse-edgar?CIK=1640147&action=getcompany",
+    "content": "SEC company profile: cik=0001640147; name=Snowflake Inc.; ticker=SNOW; sic=7372; sic_description=Services-Prepackaged Software; exchange=NYSE; state=DE; fiscal_year_end=0131."
+   }
+  ]
+ },
+ {
+  "run": "debug5.json",
+  "text": "Non-GAAP EPS of $0.62, surpassing the consensus estimate of $0.45.",
+  "quote": "Non-GAAP EPS of $0.62, surpassing the consensus estimate of $0.45.",
+  "source_ids": [
+   "S15"
+  ],
+  "sources": [
+   {
+    "id": "S15",
+    "kind": "web_page",
+    "title": "SNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook",
+    "url": "https://finance.yahoo.com/technology/ai/articles/snow-q2-earnings-call-highlights-140000166.html",
+    "content": "**Snowflake Inc.** SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger core-platform consumption and a higher full-year product revenue outlook. Non-GAAP EPS of $0.62 beat the Zacks Consensus Estimate of $0.45, while revenues of $1.54…[truncated]\n\nOops, something went wrong\nSkip to navigation  Skip to right column \nSign in\n1. My Portfolio\n1. Watchlists\n2. Portfolios\n2. 1. Stocks \n1. Most Active\n2. Day Gainers\n3. Day Losers\n4. Trending\n5. Highest Dividend\n6. Large Cap\n7. Small Cap\n8. Most Expensive\n9. Highest Beta\n10. Pink Sheet\n11. Unusual Volume\n2. Crypto \n1. Most Active\n2. Day Gainers\n3. Day Losers\n3. Private Companies \n1. 52 Week Gainers\n2. Recently Funded\n3. Most Funded\n4. Options \n1. Day Gainers\n2. Day Losers\n3. Highest Open Interest\n4. Highest Implied Volatility\n5. Sectors \n1. Technology\n2. Financial Services\n3. Consumer Cyclical\n4. Consumer Defensive\n5. Communication Services\n6. Healthcare\n7. Industrials\n6. Treasury Bonds\n7. Currencies\n8. World Indices\n9. Commodities\n10. ETFs\n11. Mutual Funds\n3. 1. Anthropic IPO\n2. Markets \n1. Stock Market News\n2. Real Estate\n3. Magnificent 7\n4. Private Markets\n5. Futures & Derivatives\n3. Originals\n4. Newsletters\n5. Economy & Policy \n1. Earnings\n2. Oil & Gas\n3. Strait of Hormuz\n4. Tariffs\n5. Clean Energy\n6. Tech \n1. Aerospace & Defense\n2. Enterprise Cloud\n7. Exchange-Traded Funds\n4. Research & Tools\n1. Calendars \n1. Earnings Calendar\n2. IPO Calendar\n3. Stock Splits\n4. Economic Events\n2. Screeners \n1. Equities\n2. Most Shorted\n3. Most Active Penny Stocks\n4. Analyst Strong Buy\n3. Stock Comparison\n4. Currency Converter\n5. Advanced Charts\n6. Community\n5. Personal Finance\n1. My Money   BETA\n2. Credit Cards \n1. Compare Credit Cards\n2. Best 0% APR Cards\n3. Best Balance Transfer\n4. Best Cash Back Cards\n5. Best Travel Cards\n3. Banking \n1. CD Rates\n2. Best High-Yield Savings\n3. Best Money Market\n4. Best Free Checking\n5. Best Online Banks\n4. Mortgage \n1. Best Mortgage Lenders\n2. Best Mortgage Rates\n3. Mortgage Refinance\n4. Mortgage Calculator\n5. Mortgage Affordability Calculator\n5. Student Loans \n1. Federal vs. Private\n2. FAFSA Guide\n3. Student Loan Assistance\n4. Student Loan Forgiveness\n5. Paying Off Student Loans\n6. Personal Loans \n1. Best Personal Loans\n2. Get Approved\n3. Best Lenders\n7. Insurance \n1. Find Car Insurance\n2. Types of Car Insurance\n3. Car Insurance Discounts\n4. Find Life Insurance\n8. Taxes \n1. How to File\n2. Refund Status\n3. Tax Extension\n4. Child Tax Credit\n9. Investing \n1. Investing Basics\n2. Real Estate Investing\n3. Retirement Basics\n10. Calculators\n6. 1. Daily Shows\n2. The 8:30\n3. Sozzi Unleashed\n4. The Daily Wolf\n5. Market Hang\n6. In the Loop\n7. Deirdre Bosa Live\n8. Weekly Shows\n9. Built Different\n10. How They Run\n11. Power Players\n12. The Big Idea\n13. Trader Talk\n14. ETF Report\n15. FA Corner\n16. More to Watch \n1. Must-watch Interviews\n2. Mag 7\n3. Fed Watch\n1. Deirdre Bosa Live!\nDeirdre Bosa Live!\n2. AI\nTrending \n Cybercab orders begin\n Nvidia after Huang\n Chip stocks slide\n Chasing 3% mortgages\nZacks\nSNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook\nZacks Equity Research\n4 min read\n SNOW\n3.43%\nSnowflake Inc. SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger…[truncated]"
+   }
+  ]
+ },
+ {
+  "run": "debug5.json",
+  "text": "Snowflake's CFO emphasized the importance of accelerating AI adoption and improving core-platform consumption.",
+  "quote": "CFO Brian Robins highlighted the company's focus on accelerating AI adoption.",
+  "source_ids": [
+   "S15"
+  ],
+  "sources": [
+   {
+    "id": "S15",
+    "kind": "web_page",
+    "title": "SNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook",
+    "url": "https://finance.yahoo.com/technology/ai/articles/snow-q2-earnings-call-highlights-140000166.html",
+    "content": "**Snowflake Inc.** SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger core-platform consumption and a higher full-year product revenue outlook. Non-GAAP EPS of $0.62 beat the Zacks Consensus Estimate of $0.45, while revenues of $1.54…[truncated]\n\nOops, something went wrong\nSkip to navigation  Skip to right column \nSign in\n1. My Portfolio\n1. Watchlists\n2. Portfolios\n2. 1. Stocks \n1. Most Active\n2. Day Gainers\n3. Day Losers\n4. Trending\n5. Highest Dividend\n6. Large Cap\n7. Small Cap\n8. Most Expensive\n9. Highest Beta\n10. Pink Sheet\n11. Unusual Volume\n2. Crypto \n1. Most Active\n2. Day Gainers\n3. Day Losers\n3. Private Companies \n1. 52 Week Gainers\n2. Recently Funded\n3. Most Funded\n4. Options \n1. Day Gainers\n2. Day Losers\n3. Highest Open Interest\n4. Highest Implied Volatility\n5. Sectors \n1. Technology\n2. Financial Services\n3. Consumer Cyclical\n4. Consumer Defensive\n5. Communication Services\n6. Healthcare\n7. Industrials\n6. Treasury Bonds\n7. Currencies\n8. World Indices\n9. Commodities\n10. ETFs\n11. Mutual Funds\n3. 1. Anthropic IPO\n2. Markets \n1. Stock Market News\n2. Real Estate\n3. Magnificent 7\n4. Private Markets\n5. Futures & Derivatives\n3. Originals\n4. Newsletters\n5. Economy & Policy \n1. Earnings\n2. Oil & Gas\n3. Strait of Hormuz\n4. Tariffs\n5. Clean Energy\n6. Tech \n1. Aerospace & Defense\n2. Enterprise Cloud\n7. Exchange-Traded Funds\n4. Research & Tools\n1. Calendars \n1. Earnings Calendar\n2. IPO Calendar\n3. Stock Splits\n4. Economic Events\n2. Screeners \n1. Equities\n2. Most Shorted\n3. Most Active Penny Stocks\n4. Analyst Strong Buy\n3. Stock Comparison\n4. Currency Converter\n5. Advanced Charts\n6. Community\n5. Personal Finance\n1. My Money   BETA\n2. Credit Cards \n1. Compare Credit Cards\n2. Best 0% APR Cards\n3. Best Balance Transfer\n4. Best Cash Back Cards\n5. Best Travel Cards\n3. Banking \n1. CD Rates\n2. Best High-Yield Savings\n3. Best Money Market\n4. Best Free Checking\n5. Best Online Banks\n4. Mortgage \n1. Best Mortgage Lenders\n2. Best Mortgage Rates\n3. Mortgage Refinance\n4. Mortgage Calculator\n5. Mortgage Affordability Calculator\n5. Student Loans \n1. Federal vs. Private\n2. FAFSA Guide\n3. Student Loan Assistance\n4. Student Loan Forgiveness\n5. Paying Off Student Loans\n6. Personal Loans \n1. Best Personal Loans\n2. Get Approved\n3. Best Lenders\n7. Insurance \n1. Find Car Insurance\n2. Types of Car Insurance\n3. Car Insurance Discounts\n4. Find Life Insurance\n8. Taxes \n1. How to File\n2. Refund Status\n3. Tax Extension\n4. Child Tax Credit\n9. Investing \n1. Investing Basics\n2. Real Estate Investing\n3. Retirement Basics\n10. Calculators\n6. 1. Daily Shows\n2. The 8:30\n3. Sozzi Unleashed\n4. The Daily Wolf\n5. Market Hang\n6. In the Loop\n7. Deirdre Bosa Live\n8. Weekly Shows\n9. Built Different\n10. How They Run\n11. Power Players\n12. The Big Idea\n13. Trader Talk\n14. ETF Report\n15. FA Corner\n16. More to Watch \n1. Must-watch Interviews\n2. Mag 7\n3. Fed Watch\n1. Deirdre Bosa Live!\nDeirdre Bosa Live!\n2. AI\nTrending \n Cybercab orders begin\n Nvidia after Huang\n Chip stocks slide\n Chasing 3% mortgages\nZacks\nSNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook\nZacks Equity Research\n4 min read\n SNOW\n3.43%\nSnowflake Inc. SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger…[truncated]"
+   }
+  ]
+ },
+ {
+  "run": "debug5.json",
+  "text": "The emphasis on integrating AI into financial workflows reflects a broader strategy to maintain cost discipline while enhancing productivity.",
+  "quote": "The emphasis on integrating AI into financial workflows reflects a broader strategy.",
+  "source_ids": [
+   "S10"
+  ],
+  "sources": [
+   {
+    "id": "S10",
+    "kind": "web_page",
+    "title": "AI in Finance: Snowflake Expedition 2026 Recap for CFOs",
+    "url": "https://www.snowflake.com/en/blog/ai-sales-transformation-expedition",
+    "content": "## Next steps for finance leaders: Start with one AI use case\n\nThe finance leaders at Expedition 2026 advocated starting with a single workflow, usually the close or the forecast, proving the result on your own data and expanding from there. Choose the process that costs your team the…[truncated]\n\nSkip to content\nBlog/Industry Solutions/Moving AI from Pilot to P&L: What Finance Leaders Should Take Away From Expedition 2026\nNov 11, 2026/8 min readIndustry Solutions\nMoving AI from Pilot to P&L: What Finance Leaders Should Take Away From Expedition 2026\nSnowflake\nSnowflake\nStatistics of business concept. Finance chart. Financial planning. Data analysis.\nThe month-end close has become the proving ground for AI in finance. Day 3 of Snowflake Expedition 2026 was built for the office of the CFO, with sessions featuring learnings from finance leaders who have moved AI into the work that defines their teams: closing the books, explaining variance, reforecasting, testing controls and preparing the tax provision.\nAcross every session, speakers made the same point in different ways. Finance will adopt AI when it can trust the output, and that trust comes from governed data, clear ownership and a human in the loop wherever judgment is required.\nIf you missed the live virtual event — or if you attended and want a little refresher — here are seven sessions that CFOs, chief accounting officers and finance executives will find useful as you start planning for next year. You can also check out the entire agenda track for finance leaders for more strategic and technical sessions on incorporating AI into your financial team workflows.\nLeading the shift from control function to growth partner\nFinance teams are being asked to close faster, forecast with more confidence and advise the business in near real time, while also proving that AI investments pay off. These three sessions describe what that shift looks like and how leaders are managing it.\nThe AI Blueprint for Finance Teams\nIn the Day 3 opening keynote, Snowflake CFO Brian Robins shares his view of the trends and pressures shaping the finance function. Yasmeen Ahmad, Senior Vice President and GM of Data Cloud at Workday, introduces zero-copy integration between Workday Data Cloud and Snowflake, which makes Workday data directly available in Snowflake. Gordon Lee, Chief Accounting Officer at DoorDash, offers a Snowflake customer’s perspective on the impact of AI-driven finance workflows and how integrated data infrastructure, governance and permissions enables his team to use data more effectively. The keynote closes with a walkthrough of how Snowflake's own finance team runs on Snowflake, then follows a CFO through a continuous close cycle that runs from accelerating the close and explaining variance to reforecasting and preparing for earnings.\nThis session is a must-watch for any financial leadership team. It presents a shared, end-to-end picture of an AI-enabled close, which makes it much easier to agree on where your own team should start.\nWatch “The AI Blueprint for Finance Teams” now.\nThe Finance Function, Reimagined: Leading Transformation in the Age of AI\nSnowflake’s Brian Robins sits down with Steffan Tomlinson, CFO of Stripe, for a conversation about the changing role of finance and…[truncated]"
+   }
+  ]
+ },
+ {
+  "run": "debug7.json",
+  "text": "The CFO raised the fiscal 2027 product revenue guidance to $6.07 billion, indicating a 36% year-over-year growth.",
+  "quote": "CFO Brian Robins raised fiscal 2027 product revenue guidance to $6.07 billion.",
+  "source_ids": [
+   "S10"
+  ],
+  "sources": [
+   {
+    "id": "S10",
+    "kind": "web_page",
+    "title": "SNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook",
+    "url": "https://finance.yahoo.com/technology/ai/articles/snow-q2-earnings-call-highlights-140000166.html",
+    "content": "**Snowflake Inc.** SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger core-platform consumption and a higher full-year product revenue outlook. Non-GAAP EPS of $0.62 beat the Zacks Consensus Estimate of $0.45, while revenues of $1.54…[truncated]\n\nSkip to navigation  Skip to right column\nSNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook\nSnowflake Inc. SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger core-platform consumption and a higher full-year product revenue outlook. Management framed AI as a multiplier across new workloads, users and existing customer spending.\nThe reported quarter also cleared Zacks expectations. Non-GAAP EPS of $0.62 beat the Zacks Consensus Estimate of $0.45, while revenues of $1.54 billion topped the $1.47 billion consensus.\nSnowflake Inc. Price, Consensus and EPS Surprise\nSnowflake Inc. Price, Consensus and EPS Surprise\nSnowflake Inc. Price, Consensus and EPS Surprise\nSnowflake Inc. price-consensus-eps-surprise-chart | Snowflake Inc. Quote\nChief financial officer Brian Robins raised fiscal 2027 product revenue guidance to $6.07 billion, representing 36% year-over-year growth, from the prior $5.84 billion and 31% growth outlook.\nFor the fiscal third quarter, Robins guided product revenues to $1.588 billion-$1.593 billion or 37-38% growth. He said forecasts continue to rely on observed consumption patterns rather than a changed methodology.\nSnowflake also lifted full-year non-GAAP operating margin guidance to 14.5% from 13.5%, while reiterating 23% adjusted free cash flow margin guidance.\nSnowflake Ties AI to Core Consumption\nChief executive officer Sridhar Ramaswamy said AI is strengthening Snowflake through new workloads, adoption of CoCo and CoWork, and higher broader platform consumption by customers using AI.\nIn the Q&A session, an Evercore ISI analyst asked how much of the acceleration came from newer AI products versus the core business. Ramaswamy said AI products contributed approximately half, with core products and faster migrations supplying the rest.\nRobins added that fiscal second-quarter product revenues rose 37% year over year, marking a third straight quarter of acceleration, with strength across both the core data platform and AI revenues.\nSNOW Deepens Agent Adoption and Customer Reach\nRamaswamy said CoCo surpassed 9,100 accounts after adding more than 2,000 during the second quarter, while CoWork expanded to 5,800 accounts.\nHe also highlighted customer use cases spanning data migration, sales, finance and supply-chain processes. Snowflake added 692 net new customers, including 14 net new Forbes Global 2000 customers.\nRobins said net revenue retention was 126%, while 828 customers generated more than $1 million in trailing 12-month product revenues. Remaining performance obligations reached $9 billion, up 30% year over year.\nSnowflake Faces Q&A on Growth Quality\nA Morgan Stanley analyst pressed management on whether the acceleration was broad and durable. Ramaswamy said growth came from a broad customer base and that AI-native companies remained a small share of revenue.\nHe also stressed that CoCo can help customers optimize queries and warehouse usage, supporting more…[truncated]"
+   }
+  ]
+ },
+ {
+  "run": "debug7.json",
+  "text": "The raised guidance and strong customer growth could indicate a robust market position, beneficial for discussions on financial strategies.",
+  "quote": "The company raised its full-year product revenue guidance to $6.07 billion.",
+  "source_ids": [
+   "S10"
+  ],
+  "sources": [
+   {
+    "id": "S10",
+    "kind": "web_page",
+    "title": "SNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook",
+    "url": "https://finance.yahoo.com/technology/ai/articles/snow-q2-earnings-call-highlights-140000166.html",
+    "content": "**Snowflake Inc.** SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger core-platform consumption and a higher full-year product revenue outlook. Non-GAAP EPS of $0.62 beat the Zacks Consensus Estimate of $0.45, while revenues of $1.54…[truncated]\n\nSkip to navigation  Skip to right column\nSNOW Q2 Earnings Call Highlights AI Flywheel, Higher Outlook\nSnowflake Inc. SNOW used its second-quarter fiscal 2027 earnings call to emphasize accelerating AI adoption, stronger core-platform consumption and a higher full-year product revenue outlook. Management framed AI as a multiplier across new workloads, users and existing customer spending.\nThe reported quarter also cleared Zacks expectations. Non-GAAP EPS of $0.62 beat the Zacks Consensus Estimate of $0.45, while revenues of $1.54 billion topped the $1.47 billion consensus.\nSnowflake Inc. Price, Consensus and EPS Surprise\nSnowflake Inc. Price, Consensus and EPS Surprise\nSnowflake Inc. Price, Consensus and EPS Surprise\nSnowflake Inc. price-consensus-eps-surprise-chart | Snowflake Inc. Quote\nChief financial officer Brian Robins raised fiscal 2027 product revenue guidance to $6.07 billion, representing 36% year-over-year growth, from the prior $5.84 billion and 31% growth outlook.\nFor the fiscal third quarter, Robins guided product revenues to $1.588 billion-$1.593 billion or 37-38% growth. He said forecasts continue to rely on observed consumption patterns rather than a changed methodology.\nSnowflake also lifted full-year non-GAAP operating margin guidance to 14.5% from 13.5%, while reiterating 23% adjusted free cash flow margin guidance.\nSnowflake Ties AI to Core Consumption\nChief executive officer Sridhar Ramaswamy said AI is strengthening Snowflake through new workloads, adoption of CoCo and CoWork, and higher broader platform consumption by customers using AI.\nIn the Q&A session, an Evercore ISI analyst asked how much of the acceleration came from newer AI products versus the core business. Ramaswamy said AI products contributed approximately half, with core products and faster migrations supplying the rest.\nRobins added that fiscal second-quarter product revenues rose 37% year over year, marking a third straight quarter of acceleration, with strength across both the core data platform and AI revenues.\nSNOW Deepens Agent Adoption and Customer Reach\nRamaswamy said CoCo surpassed 9,100 accounts after adding more than 2,000 during the second quarter, while CoWork expanded to 5,800 accounts.\nHe also highlighted customer use cases spanning data migration, sales, finance and supply-chain processes. Snowflake added 692 net new customers, including 14 net new Forbes Global 2000 customers.\nRobins said net revenue retention was 126%, while 828 customers generated more than $1 million in trailing 12-month product revenues. Remaining performance obligations reached $9 billion, up 30% year over year.\nSnowflake Faces Q&A on Growth Quality\nA Morgan Stanley analyst pressed management on whether the acceleration was broad and durable. Ramaswamy said growth came from a broad customer base and that AI-native companies remained a small share of revenue.\nHe also stressed that CoCo can help customers optimize queries and warehouse usage, supporting more…[truncated]"
+   }
+  ]
+ }
+]

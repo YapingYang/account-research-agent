@@ -120,6 +120,22 @@ def test_wait_status_names_request_and_daily_quotas() -> None:
     assert state.classify() == "tokens/day"
 
 
+def test_unknown_headers_skip_throttling() -> None:
+    state = RateLimitState()
+    state.capture_headers({"x-ratelimit-unknown-header": "not-a-limit"})
+    assert state.remaining_requests() is None
+    assert state.remaining_tokens is None
+    assert state.classify() == "unknown"
+
+    slept: list[float] = []
+    middleware = RateLimitMiddleware(state, sleeper=slept.append)
+    response = middleware.wrap_model_call(
+        _request(), lambda _request: ModelResponse(result=[AIMessage(content="done")])
+    )
+    assert response.result[0].content == "done"
+    assert slept == []
+
+
 def test_daily_quota_error_stops_without_retry_or_wait() -> None:
     state = RateLimitState()
     slept: list[float] = []
@@ -131,3 +147,54 @@ def test_daily_quota_error_stops_without_retry_or_wait() -> None:
     with pytest.raises(DailyQuotaExceeded, match="Daily token quota exhausted"):
         middleware.wrap_model_call(_request(), handler)
     assert slept == []
+
+
+def test_extracts_headers_from_wrapped_exception() -> None:
+    state = RateLimitState()
+
+    class InnerError(RuntimeError):
+        def __init__(self) -> None:
+            self.response = type("Response", (), {"headers": {"retry-after": "1.5s"}})()
+
+    exc = RuntimeError("429 rate limit")
+    exc.__cause__ = InnerError()  # type: ignore[attr-defined]
+
+    state.capture_exception(exc)
+
+    assert state.headers["retry-after"] == "1.5s"
+    assert state.reset_seconds == 1.5
+
+
+def test_unknown_reset_uses_exponential_backoff() -> None:
+    state = RateLimitState()
+    slept: list[float] = []
+    middleware = RateLimitMiddleware(state, max_rate_limit_waits=3, sleeper=slept.append)
+    request = _request()
+
+    def handler(_request: ModelRequest[Any]) -> ModelResponse[Any]:
+        raise RuntimeError("429 rate limit")
+
+    with pytest.raises(RuntimeError, match="Rate-limit wait budget exhausted"):
+        middleware.wrap_model_call(request, handler)
+    assert slept == [2.0, 4.0, 8.0]
+
+
+def test_out_of_credit_fails_fast_without_waiting() -> None:
+    from account_research.models.ratelimit import (
+        ModelUnavailableError,
+        RateLimitMiddleware,
+        RateLimitState,
+    )
+
+    from types import SimpleNamespace
+
+    waits: list[float] = []
+    middleware = RateLimitMiddleware(RateLimitState(), 6, 300, 1500)
+    request = SimpleNamespace(system_message=None, system_prompt="", messages=[], tools=[])
+
+    def handler(_request: object) -> object:
+        raise RuntimeError("Error code: 429 - {'error': {'code': 'credit_balance_exhausted'}}")
+
+    with pytest.raises(ModelUnavailableError, match="out of credit"):
+        middleware.wrap_model_call(request, handler)  # type: ignore[arg-type]
+    assert waits == []
