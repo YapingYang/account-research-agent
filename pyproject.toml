@@ -10,14 +10,16 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 dependencies = [
-  "deepagents", "langchain", "langgraph", "langchain-groq", "langchain-mcp-adapters",
-  "tavily-python", "pydantic", "pydantic-settings", "pyyaml", "typer", "rich", "python-dotenv"
+  "deepagents", "langchain", "langgraph", "langchain-groq", "langchain-openai",
+  "langchain-mcp-adapters", "tavily-python", "pydantic", "pydantic-settings", "pyyaml",
+  "typer", "rich", "python-dotenv", "streamlit"
 ]
 
 [project.optional-dependencies]
 edgar = ["sec-edgar-mcp"]
 local = ["langchain-ollama"]
 gemini = ["langchain-google-genai"]
+tracing = ["langsmith", "langfuse"]
 
 [dependency-groups]
 dev = ["pytest", "pytest-mock", "ruff", "mypy", "pre-commit", "types-PyYAML"]

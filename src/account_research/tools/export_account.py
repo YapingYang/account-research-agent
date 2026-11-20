@@ -52,7 +52,15 @@ def render_brief(record: AccountRecord) -> str:
         if not values:
             lines.extend(["_No sourced claims._", ""])
             return
-        lines.extend(f"- {claim.text} [sources: {', '.join(claim.source_ids)}]" for claim in values)
+        for claim in values:
+            source_refs = []
+            for source_id in claim.source_ids:
+                source = next((s for s in record.sources if s.id == source_id), None)
+                if source and source.published_date:
+                    source_refs.append(f"{source_id}, {source.published_date.isoformat()}")
+                else:
+                    source_refs.append(source_id)
+            lines.append(f"- {claim.text} [sources: {', '.join(source_refs)}]")
         lines.append("")
 
     add_claims("Summary", record.summary)
@@ -67,7 +75,7 @@ def render_brief(record: AccountRecord) -> str:
     lines.extend(["## Sources", ""])
     if record.sources:
         lines.extend(
-            f"- **{source.id}** — {source.title} ({source.kind}): {source.url}"
+            f"- **{source.id}** — {source.title} ({source.kind}, {source.freshness_status}, {source.published_date.isoformat() if source.published_date else 'undated'}): {source.url}"
             for source in record.sources
         )
     else:

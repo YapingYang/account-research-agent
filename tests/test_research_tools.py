@@ -84,7 +84,7 @@ def test_fetch_rejects_local_urls_and_wraps_truncated_content(
         "getaddrinfo",
         lambda *_args: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))],
     )
-    settings = Settings(tavily_api_key="secret", max_page_chars=100, _env_file=None)
+    settings = Settings(tavily_api_key="secret", max_page_chars=100, max_page_fetches=2, _env_file=None)
     registry = SourceRegistry()
     tool = make_fetch_page(settings, registry)
     result = tool.invoke({"url": "https://example.com"})
@@ -92,9 +92,7 @@ def test_fetch_rejects_local_urls_and_wraps_truncated_content(
     assert 'title="Page"' in result
     assert "[truncated]" in result
     tool.invoke({"url": "https://example.com/2"})
-    assert "Budget reached. Draft and call submit_draft now." in tool.invoke(
-        {"url": "https://example.com/3"}
-    )
+    assert "Page fetch budget reached" in tool.invoke({"url": "https://example.com/3"})
     assert len(registry.all()) == 2
 
 
@@ -177,9 +175,7 @@ def test_mcp_allowlist_wrapper_bounds_marks_and_records(
     assert '<untrusted_content source_id="S1"' in result
     assert "[truncated]" in result
     assert "https://www.sec.gov/Archives/edgar/data/1/filing.txt" in str(registry.all()[0].url)
-    assert "Budget reached. Draft and call submit_draft now." in tools[0].invoke(
-        {"identifier": "AAPL"}
-    )
+    assert "SEC call budget reached" in tools[0].invoke({"identifier": "AAPL"})
 
 
 def test_sec_output_builds_filing_urls_from_cik_and_accessions() -> None:
@@ -195,4 +191,72 @@ def test_sec_output_builds_filing_urls_from_cik_and_accessions() -> None:
     assert str(sources[0].url) == (
         "https://www.sec.gov/Archives/edgar/data/320193/000032019326000020"
     )
-    assert all(source.kind == "sec_filing" for source in sources)
+    assert all(source.kind == "sec" for source in sources)
+
+
+def test_sec_metrics_create_individual_sources() -> None:
+    registry = SourceRegistry()
+    payload = "{'type': 'text', 'text': '{\"success\":true,\"cik\":\"1640147\",\"metrics\":{\"NetIncomeLoss\":{\"value\":-487291000,\"unit\":\"USD\",\"period\":\"2026-07-31\",\"form\":\"10-Q\",\"fiscal_period\":\"Q2\"}}}'}"
+    sources = _record_sec_sources(payload, {"identifier": "SNOW"}, "get_company_facts", registry)
+    assert len(sources) == 1
+    assert sources[0].kind == "sec"
+    assert sources[0].published_date is not None
+    assert sources[0].published_date.isoformat() == "2026-07-31"
+    assert sources[0].form_type == "10-Q"
+    assert sources[0].fiscal_period == "Q2"
+
+
+def test_sec_facts_in_adapter_repr_format_register_each_metric() -> None:
+    """str() of the adapter's content blocks escapes newlines; parsing must survive that."""
+    facts = (
+        '{\n  "success": true,\n  "cik": "0001640147",\n  "metrics": {\n'
+        '    "NetIncomeLoss": {"value": -487291000.0, "unit": "USD", "period": "2026-07-31",'
+        ' "form": "10-Q", "fiscal_year": 2027, "fiscal_period": "Q2"},\n'
+        '    "EarningsPerShareBasic": {"value": -1.4, "unit": "USD/shares",'
+        ' "period": "2026-07-31", "form": "10-Q", "fiscal_year": 2027, "fiscal_period": "Q2"}\n'
+        "  }\n}"
+    )
+    text = str([{"type": "text", "text": facts, "id": "lc_1"}])
+    registry = SourceRegistry()
+    sources = _record_sec_sources(text, {"identifier": "SNOW"}, "get_company_facts", registry)
+    assert [source.title for source in sources] == [
+        "NetIncomeLoss — 10-Q",
+        "EarningsPerShareBasic — 10-Q",
+    ]
+    assert "-1.4 USD/shares" in sources[1].content
+    assert "Q2 fiscal 2027" in sources[1].content
+
+
+def test_sec_company_info_gets_its_own_source() -> None:
+    info = '{\n  "success": true,\n  "company": {"cik": "0001640147", "name": "Snowflake Inc."}\n}'
+    registry = SourceRegistry()
+    sources = _record_sec_sources(
+        str([{"type": "text", "text": info}]), {"identifier": "SNOW"}, "get_company_info", registry
+    )
+    assert len(sources) == 1
+    assert "CIK=1640147" in str(sources[0].url)
+
+
+def test_refetching_a_known_url_keeps_the_new_content() -> None:
+    registry = SourceRegistry()
+    registry.record("https://example.com/a", "A", "search_result", content="short snippet")
+    source = registry.record(
+        "https://example.com/a", "A", "web_page", content="full page text with the quote"
+    )
+    assert "full page text with the quote" in source.content
+    assert source.kind == "web_page"
+
+
+def test_fetch_page_refuses_sec_urls_without_spending_budget(monkeypatch) -> None:
+    settings = Settings(_env_file=None, TAVILY_API_KEY="test", max_page_fetches=1)
+    monkeypatch.setattr("account_research.tools.fetch_page.TavilyClient", lambda **_kwargs: object())
+    tool = make_fetch_page(settings, SourceRegistry())
+    result = tool.invoke({"url": "https://www.sec.gov/Archives/edgar/data/1640147/0001"})
+    assert "does not read sec.gov URLs" in result
+
+
+def test_page_text_drops_navigation_lines() -> None:
+    page = "Sign in\n1. Most Active\n2. Day Gainers\nRobins emphasized operating leverage and disciplined headcount growth this quarter."
+    assert fetch_module._main_text(page) == (
+        "Robins emphasized operating leverage and disciplined headcount growth this quarter."
+    )

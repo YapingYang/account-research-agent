@@ -10,6 +10,15 @@ from typing import Any
 from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 
 
+_BILLING_CODES = (
+    "insufficient_quota",  # OpenAI
+    "credit_balance_exhausted",  # OpenAI
+    "billing_hard_limit",  # OpenAI
+    "billing_error",  # Anthropic (HTTP 402)
+    "credit balance is too low",  # Anthropic
+)
+
+
 class ModelUnavailableError(RuntimeError):
     """Model was not found or returned repeated server errors."""
 
@@ -38,9 +47,20 @@ def _seconds(value: str | None) -> float | None:
 
 
 def _headers(error: BaseException) -> dict[str, str]:
-    response = getattr(error, "response", None)
-    raw = getattr(response, "headers", {}) or {}
-    return {str(k).lower(): str(v) for k, v in raw.items()}
+    headers: dict[str, str] = {}
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        response = getattr(current, "response", None)
+        raw = getattr(response, "headers", {}) or {}
+        headers.update({str(k).lower(): str(v) for k, v in raw.items()})
+        for candidate in (getattr(current, "headers", None),):
+            if not candidate:
+                continue
+            headers.update({str(k).lower(): str(v) for k, v in dict(candidate).items()})
+        current = getattr(current, "__cause__", None) or getattr(current, "__context__", None)
+    return {k: v for k, v in headers.items() if k.startswith("x-ratelimit-") or k == "retry-after"}
 
 
 class RateLimitState:
@@ -57,11 +77,16 @@ class RateLimitState:
         self.capture_headers(response.headers)
         self.last_status = str(getattr(response, "status_code", ""))
 
+    def capture_exception(self, error: BaseException) -> None:
+        self.capture_headers(_headers(error))
+
     def capture_headers(self, headers: Any) -> None:
+        if not headers:
+            return
         self.headers.update(
             {
                 str(k).lower(): str(v)
-                for k, v in headers.items()
+                for k, v in dict(headers).items()
                 if str(k).lower().startswith("x-ratelimit-") or str(k).lower() == "retry-after"
             }
         )
@@ -136,7 +161,9 @@ class RateLimitState:
 
     @property
     def reset_seconds(self) -> float | None:
-        return _seconds(self.headers.get("x-ratelimit-reset-tokens"))
+        return _seconds(self.headers.get("x-ratelimit-reset-tokens")) or _seconds(
+            self.headers.get("retry-after")
+        )
 
     @property
     def output_tpm(self) -> int | None:
@@ -183,6 +210,10 @@ class RateLimitMiddleware(AgentMiddleware):
         max_output_tokens: int = 1500,
         *,
         sleeper: Callable[[float], None] = time.sleep,
+        default_wait_seconds: float = 0.0,
+        backoff_base_seconds: float = 2.0,
+        backoff_cap_seconds: float = 15.0,
+        on_wait: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         super().__init__()
         self.state = state
@@ -190,6 +221,24 @@ class RateLimitMiddleware(AgentMiddleware):
         self.max_total_wait_seconds = max_total_wait_seconds
         self.max_output_tokens = max_output_tokens
         self.sleeper = sleeper
+        self.default_wait_seconds = default_wait_seconds
+        self.backoff_base_seconds = backoff_base_seconds
+        self.backoff_cap_seconds = backoff_cap_seconds
+        self.on_wait = on_wait
+
+    def _backoff_delay(self, wait_count: int) -> float:
+        if wait_count < 0:
+            wait_count = 0
+        return min(self.backoff_base_seconds * (2 ** wait_count), self.backoff_cap_seconds)
+
+    def _emit_wait(self, limit: str, seconds: float, reset: str) -> None:
+        if self.on_wait is not None:
+            self.on_wait({
+                "type": "rate-limit-wait",
+                "limit": limit,
+                "seconds": seconds,
+                "reset": reset,
+            })
 
     def wrap_model_call(
         self,
@@ -236,11 +285,29 @@ class RateLimitMiddleware(AgentMiddleware):
             else:
                 limit = ""
                 reset = ""
+            if limit and (not reset or reset == "unknown"):
+                if waits >= self.max_rate_limit_waits:
+                    raise RuntimeError("Rate-limit wait budget exhausted before model call")
+                delay = self._backoff_delay(waits)
+                self._emit_wait(limit, delay, reset or "unknown")
+                self.state.wait(delay, limit, self.max_total_wait_seconds, self.sleeper)
+                waits += 1
+                remaining_header = {
+                    "tokens/min": "x-ratelimit-remaining-tokens",
+                    "requests/min": "x-ratelimit-remaining-requests",
+                    "output tokens per minute": "x-ratelimit-remaining-output-tokens",
+                    "tokens/day": "x-ratelimit-remaining-tokens-per-day",
+                }.get(limit)
+                if remaining_header:
+                    self.state.headers.pop(remaining_header, None)
+                continue
             if limit:
                 if waits >= self.max_rate_limit_waits:
                     raise RuntimeError("Rate-limit wait budget exhausted before model call")
+                delay = _seconds(reset) or self.state.reset_seconds or self._backoff_delay(waits)
+                self._emit_wait(limit, delay, reset or "unknown")
                 self.state.wait(
-                    _seconds(reset) or self.state.reset_seconds or 60.0,
+                    delay,
                     limit,
                     self.max_total_wait_seconds,
                     self.sleeper,
@@ -262,6 +329,12 @@ class RateLimitMiddleware(AgentMiddleware):
                 if headers:
                     self.state.capture_headers(headers)
                 text = f"{type(exc).__name__} {exc}".casefold()
+                if any(code in text for code in _BILLING_CODES):
+                    # Out of credit is not a rate limit: waiting will not help, so fail fast.
+                    raise ModelUnavailableError(
+                        "The model provider rejected the request: the account is out of credit "
+                        "or quota. Add billing credit or switch ARA_MODEL to another provider."
+                    ) from exc
                 if "429" in text or "rate limit" in text or "rate_limit" in text:
                     if waits >= self.max_rate_limit_waits:
                         raise RuntimeError(
@@ -269,13 +342,16 @@ class RateLimitMiddleware(AgentMiddleware):
                         ) from exc
                     retry_after = getattr(exc, "retry_after", None) or headers.get("retry-after")
                     delay = _seconds(str(retry_after)) if retry_after is not None else None
-                    delay = delay or self.state.reset_seconds or 60.0
                     limit = self.state.classify(exc)
+                    reset = self.state.reset_for(limit) if limit != "unknown" else "unknown"
+                    if delay is None:
+                        delay = _seconds(reset) if reset not in (None, "unknown") else self._backoff_delay(waits)
                     if limit == "tokens/day":
                         raise DailyQuotaExceeded(
                             f"Daily token quota exhausted; reset time "
                             f"{self.state.reset_for(limit)}; headers={self.state.latest_headers}"
                         ) from exc
+                    self._emit_wait(limit, delay, reset)
                     self.state.wait(
                         delay,
                         limit,

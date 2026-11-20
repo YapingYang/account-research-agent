@@ -191,6 +191,48 @@ def test_runner_sends_final_submit_instruction_after_early_agent_stop(
     assert (tmp_path / "acme" / "brief.md").exists()
 
 
+def test_run_research_accepts_progress_callback(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[dict[str, Any]] = []
+
+    class FakeAgent:
+        def invoke(self, *_args: Any, **_kwargs: Any) -> Any:
+            return {"messages": []}
+
+    monkeypatch.setattr("account_research.agent.run.build_agent", lambda *_a, **_k: FakeAgent())
+    settings = Settings(model="groq:test", mcp_enabled=False, _env_file=None)
+
+    with pytest.raises(ResearchRunError):
+        run_research(settings, "Acme", progress_callback=seen.append)
+
+    assert seen and seen[0]["type"] == "start"
+
+
+def test_run_research_configures_tracing(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    class FakeAgent:
+        def invoke(self, *_args: Any, **_kwargs: Any) -> Any:
+            return {"messages": []}
+
+    def fake_configure(settings: Settings) -> dict[str, Any]:
+        calls.append(getattr(settings, "langsmith_project", ""))
+        return {"backend": "langsmith", "enabled": True, "project": settings.langsmith_project}
+
+    monkeypatch.setattr("account_research.agent.run.build_agent", lambda *_a, **_k: FakeAgent())
+    monkeypatch.setattr("account_research.agent.run.configure_tracing", fake_configure)
+    settings = Settings(
+        model="groq:test",
+        langsmith_project="account-research-demo",
+        mcp_enabled=False,
+        _env_file=None,
+    )
+
+    with pytest.raises(ResearchRunError):
+        run_research(settings, "Acme")
+
+    assert calls == ["account-research-demo"]
+
+
 def test_rate_limit_never_uses_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     built_models: list[str] = []
 
@@ -282,3 +324,181 @@ def test_model_not_found_uses_only_eligible_fallback(
     assert built == (["groq:primary", "groq:fallback"] if should_run else ["groq:primary"])
     if should_run:
         assert result.record.summary is not None
+
+
+def _offline_settings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, responses: list[AIMessage]
+) -> Settings:
+    class FakeTavily:
+        def __init__(self, **kwargs: Any) -> None:
+            del kwargs
+
+        def search(self, query: str, **kwargs: Any) -> dict[str, Any]:
+            del query, kwargs
+            return {
+                "results": [
+                    {"url": "https://example.com", "title": "Acme", "content": "Acme facts"}
+                ]
+            }
+
+    monkeypatch.setattr(search_module, "TavilyClient", FakeTavily)
+    monkeypatch.setattr(fetch_module, "TavilyClient", FakeTavily)
+    fake_model = ScriptedToolChatModel(responses)
+    monkeypatch.setattr(
+        "account_research.agent.builder.get_chat_model", lambda *_args, **_kwargs: fake_model
+    )
+    return Settings(
+        model="groq:test",
+        fallback_model=None,
+        tavily_api_key="test",
+        mcp_enabled=False,
+        output_dir=tmp_path,
+        _env_file=None,
+    )
+
+
+def test_start_research_pauses_until_approved(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from account_research.agent.run import start_research
+
+    settings = _offline_settings(
+        monkeypatch,
+        tmp_path,
+        [
+            _call("web_search", {"query": "Acme"}, "1"),
+            _call("submit_draft", _draft("S1"), "2"),
+            _call("export_account", {}, "3"),
+            AIMessage(content="Done."),
+        ],
+    )
+    pending = start_research(settings, "Acme")
+    assert pending.record.company_name == "Acme"
+    assert pending.can_revise
+    tools_called = [step["tool"] for step in pending.activity]
+    assert tools_called == ["web_search", "submit_draft", "export_account"]
+    assert not (tmp_path / "acme" / "brief.md").exists()
+
+    result = pending.approve()
+    assert (tmp_path / "acme" / "brief.md").exists()
+    assert result.output_paths
+
+
+def test_rejecting_sends_feedback_and_pauses_on_revision(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from account_research.agent.run import start_research
+
+    revised = _draft("S1")
+    revised["summary"]["text"] = "Acme builds workflow software for finance teams"
+    settings = _offline_settings(
+        monkeypatch,
+        tmp_path,
+        [
+            _call("web_search", {"query": "Acme"}, "1"),
+            _call("submit_draft", _draft("S1"), "2"),
+            _call("export_account", {}, "3"),
+            _call("submit_draft", revised, "4"),
+            _call("export_account", {}, "5"),
+            AIMessage(content="Done."),
+        ],
+    )
+    pending = start_research(settings, "Acme")
+    revision = pending.reject("Mention finance teams.")
+    assert revision.record.summary is not None
+    assert "finance teams" in revision.record.summary.text
+    assert not revision.can_revise
+    assert not (tmp_path / "acme" / "brief.md").exists()
+    with pytest.raises(ValueError, match="already revised once"):
+        revision.reject("again")
+    revision.approve()
+    assert (tmp_path / "acme" / "brief.md").exists()
+
+
+def test_anthropic_model_runs_agent_loop_offline(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Drive start_research through the real ChatAnthropic code path with a fake API client."""
+    from types import SimpleNamespace
+
+    from anthropic.types.beta import BetaMessage
+    from langchain_anthropic import ChatAnthropic
+
+    from account_research.agent.run import start_research
+
+    class FakeTavily:
+        def __init__(self, **kwargs: Any) -> None:
+            del kwargs
+
+        def search(self, query: str, **kwargs: Any) -> dict[str, Any]:
+            del query, kwargs
+            return {
+                "results": [
+                    {"url": "https://example.com", "title": "Acme", "content": "Acme facts"}
+                ]
+            }
+
+    monkeypatch.setattr(search_module, "TavilyClient", FakeTavily)
+
+    def reply(index: int, name: str, args: dict[str, Any]) -> BetaMessage:
+        return BetaMessage.model_validate(
+            {
+                "id": f"msg_{index}",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-opus-5-5",
+                "content": [
+                    {"type": "thinking", "thinking": "", "signature": f"sig{index}"},
+                    {"type": "tool_use", "id": f"toolu_{index}", "name": name, "input": args},
+                ],
+                "stop_reason": "tool_use",
+                "stop_sequence": None,
+                "usage": {"input_tokens": 900, "output_tokens": 60},
+            }
+        )
+
+    script = [
+        reply(1, "web_search", {"query": "Acme"}),
+        reply(2, "submit_draft", _draft("S1")),
+        reply(3, "export_account", {}),
+    ]
+    sent: list[dict[str, Any]] = []
+
+    def create(**payload: Any) -> SimpleNamespace:
+        sent.append(payload)
+        message = script.pop(0)
+        return SimpleNamespace(parse=lambda: message, headers={})
+
+    raw = SimpleNamespace(create=create)
+    fake_client = SimpleNamespace(
+        beta=SimpleNamespace(messages=SimpleNamespace(with_raw_response=raw))
+    )
+    monkeypatch.setattr(ChatAnthropic, "_client", fake_client, raising=False)
+
+    settings = Settings(
+        model="anthropic:claude-opus-5-5",
+        fallback_model=None,
+        tavily_api_key="test",
+        mcp_enabled=False,
+        output_dir=tmp_path,
+        ANTHROPIC_API_KEY="sk-ant-test",
+        _env_file=None,
+    )
+    pending = start_research(settings, "Acme")
+
+    assert pending.record.company_name == "Acme"
+    assert not (tmp_path / "acme" / "brief.md").exists()
+    first, last = sent[0], sent[-1]
+    tool_names = {tool["name"] for tool in first["tools"]}
+    assert {"web_search", "submit_draft", "export_account"} <= tool_names
+    assert first.get("tool_choice") in (None, {"type": "auto"})  # forced tool_choice is a 400
+    assert "temperature" not in first
+    # Earlier thinking blocks are passed back unchanged on later turns.
+    replayed = [
+        block
+        for message in last["messages"]
+        if message["role"] == "assistant" and isinstance(message["content"], list)
+        for block in message["content"]
+        if block.get("type") == "thinking"
+    ]
+    assert [block["signature"] for block in replayed] == ["sig1", "sig2"]
